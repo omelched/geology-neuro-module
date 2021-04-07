@@ -1,93 +1,87 @@
-from mongoengine import Document, ReferenceField, EmbeddedDocumentField, EmbeddedDocument, ListField
+import uuid
+import enum
+
+from sqlalchemy import Column, String, Integer, ForeignKey
+from sqlalchemy.orm import declarative_base
+from sqlalchemy.types import CHAR, Enum
+
+from neuroAPI.database.ext import GUID
+
+Base = declarative_base()
 
 
-class _BaseDocument(Document):
-    meta = {
-        'abstract': True,
+# ENUMS
+
+class UserStatus(enum.Enum):
+    admin = 1
+    basic = 2
+
+
+class ContactInformationType(enum.Enum):
+    firstname = 1
+    lastname = 2
+    email = 3
+
+
+class BorderPointType(enum.Enum):
+    max = 1
+    min = 2
+
+
+class MIMEDataType(enum.Enum):
+    xlsx = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    xls = "application/vnd.ms-excel"
+    xlsb = "application/vnd.ms-excel.sheet.binary.macroEnabled.12"
+    csv = "text/csv"
+
+
+# TABLES
+# TODO: add back_populates
+
+class AppUser(Base):
+    __tablename__ = 'app_user'
+    __table_args__ = {
+        'comment':
+            '''
+            Stores user data.
+            Not named "users" because of PostgreSQL keyword.
+            '''
     }
 
+    id = Column(GUID,
+                primary_key=True, default=uuid.uuid4,
+                comment='User id')
+    username = Column(String(64),
+                      nullable=False, unique=True,
+                      comment='User name')
+    salt = Column(CHAR(16),
+                  nullable=False,
+                  comment='Password salt')
+    password = Column(CHAR(64),
+                      nullable=False,
+                      comment='sha-256("salt"+":"+"user password")')
+    user_status = Column(Enum(UserStatus),
+                         nullable=False,
+                         comment='Sets privileges')
 
-class _BaseSchema(EmbeddedDocument):
-    meta = {
-        'abstract': True,
+
+class UserContactInformation(Base):
+    __tablename__ = 'user_contact_information'
+    __table_args__ = {
+        'comment':
+            '''
+            Stores user contact information.
+            '''
     }
 
+    user_id = Column(ForeignKey('app_user.id'),
+                     primary_key=True,
+                     comment='User id')
+    contact_info_type = Column(Enum(ContactInformationType),
+                               primary_key=True,
+                               comment='CI type')
+    contact_info_value = Column(String(320),
+                                nullable=True,
+                                comment='CI value')
 
-class Point(_BaseSchema):
-    x = None
-    y = None
-    z = None
-
-
-class Border(_BaseSchema):
-    Name = None
-    Min = None
-    Max = None
-
-
-class User(_BaseDocument):
-    FirtsName = None
-
-
-class Deposit(_BaseDocument):
-    Offset = None
-    Borders = ListField(EmbeddedDocumentField(Border))
-    UsersID = ReferenceField(User)
-
-
-class Rock(_BaseDocument):
-    DepositID = ReferenceField(Deposit)
-    Index = None
-    Name = None
-    Color = None
-    UsersID = ReferenceField(User)
-
-
-class Interval(_BaseSchema):
-    rocksID = ReferenceField(Rock)
-    azimuth = None
-    zenith = None
-    from_ = EmbeddedDocumentField(Point, db_field='from')
-    to = EmbeddedDocumentField(Point)
-
-
-class Well(_BaseDocument):
-    DepositID = ReferenceField(Deposit)
-    Name = None
-    Head = EmbeddedDocumentField(Point)
-    Intervals = ListField(EmbeddedDocumentField(Interval))
-    Foot = EmbeddedDocumentField(Point)
-
-
-class BlockModel(_BaseDocument):
-    DepositID = ReferenceField(Deposit)
-    Size = None
-
-
-class FamousBlock(_BaseDocument):
-    BlockModelID = ReferenceField(BlockModel)
-    WellID = ReferenceField(Well)
-    RockID = ReferenceField(Rock)
-    Center = EmbeddedDocumentField(Point)
-
-
-class NeuroModel(_BaseDocument):
-    WellID = ReferenceField(Well)
-    EpochsCount = None
-    CrossValidationModel = None
-    FullModels = None
-
-
-class PredictedBlock(_BaseDocument):
-    FamousBlockID = ReferenceField(FamousBlock)
-    NeuroModelID = ReferenceField(NeuroModel)
-    Outputs = None
-    PredictedRockProbability = None
-
-
-class Metricks(_BaseDocument):
-    NeuroModelID = ReferenceField(NeuroModel)
-    Epoch = None
-    F1 = None
-    Loss = None
-    Accuraccy = None
+# TODO: other tables
