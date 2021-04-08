@@ -227,7 +227,7 @@ class Well(Base):
 
 
 class WellIntervals(Base):
-    __tablename__ = 'wells'
+    __tablename__ = 'well_intervals'
     __table_args__ = {
         'comment':
             '''
@@ -479,7 +479,7 @@ class Files(Base):
     name = Column(String(255),
                   nullable=False,
                   comment='riginal filename with extension, e.g. "text.xlsx"')
-    data_type = Column(Enum(MIMEDataType, values_callable=True),
+    data_type = Column(Enum(MIMEDataType, values_callable=lambda obj: [e.value for e in obj]),
                        nullable=False,
                        comment='File data_type')
     description = Column(Text,
