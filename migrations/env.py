@@ -24,6 +24,24 @@ target_metadata = None
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
 
+# ++ omelched
+from neuroAPI.utils import config as _config # noqa
+_driver = _config.get('DATABASE', 'DB_DRIVER')
+
+if _driver == 'sqlite':
+    config.set_main_option('sqlalchemy.url',
+                           f'{_driver}:///{_config.get("DATABASE", "DB_PATH")}')
+elif _driver == 'postgresql':
+    config.set_main_option('sqlalchemy.url',
+                           '{}://{}:{}@{}/{}'.format(_driver,
+                                                     {_config.get("DATABASE", "DB_USER")},
+                                                     {_config.get("DATABASE", "DB_PASS")},
+                                                     {_config.get("DATABASE", "DB_PATH")},
+                                                     {_config.get("DATABASE", "DB_NAME")}))
+else:
+    raise NotImplemented
+# -- omelched
+
 
 def run_migrations_offline():
     """Run migrations in 'offline' mode.

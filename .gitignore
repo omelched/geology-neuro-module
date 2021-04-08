@@ -131,4 +131,5 @@ dmypy.json
 # ++ omelched
 .idea/
 logs/
+CONFIG.cfg
 # -- omelched
