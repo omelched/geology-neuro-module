@@ -44,7 +44,7 @@ class AppUser(Base):
     __tablename__ = 'app_users'
     __table_args__ = {
         'comment':
-            ("Stores user data."
+            ("Stores user data. "
              "Not named 'users' because of PostgreSQL keyword.")
     }
 
