@@ -44,10 +44,8 @@ class AppUser(Base):
     __tablename__ = 'app_users'
     __table_args__ = {
         'comment':
-            '''
-            Stores user data.
-            Not named "users" because of PostgreSQL keyword.
-            '''
+            ("Stores user data."
+             "Not named 'users' because of PostgreSQL keyword.")
     }
 
     id = Column(GUID,
@@ -70,10 +68,7 @@ class AppUser(Base):
 class UserContactInformation(Base):
     __tablename__ = 'user_contact_information'
     __table_args__ = {
-        'comment':
-            '''
-            Stores user contact information.
-            '''
+        'comment': "Stores user contact information."
     }
 
     user_id = Column(ForeignKey('app_users.id'),
@@ -90,10 +85,7 @@ class UserContactInformation(Base):
 class Deposit(Base):
     __tablename__ = 'deposits'
     __table_args__ = {
-        'comment':
-            '''
-            Stores deposit data.
-            '''
+        'comment': "Stores deposit data."
     }
 
     id = Column(GUID,
@@ -107,10 +99,7 @@ class Deposit(Base):
 class DepositOwners(Base):
     __tablename__ = 'deposit_owners'
     __table_args__ = {
-        'comment':
-            '''
-            Links users and owned deposits.
-            '''
+        'comment': "Links users and owned deposits."
     }
 
     deposit_id = Column(ForeignKey('deposits.id'),
@@ -125,10 +114,7 @@ class DepositOwners(Base):
 class DepositBorders(Base):
     __tablename__ = 'deposit_borders'
     __table_args__ = {
-        'comment':
-            '''
-            Stores deposit borders data.
-            '''
+        'comment': "Stores deposit borders data."
     }
 
     deposit_id = Column(ForeignKey('deposits.id'),
@@ -151,10 +137,7 @@ class DepositBorders(Base):
 class DepositFiles(Base):
     __tablename__ = 'deposit_files'
     __table_args__ = {
-        'comment':
-            '''
-            Lists links to deposit’s files.
-            '''
+        'comment': "Lists links to deposit’s files."
     }
 
     deposit_id = Column(ForeignKey('deposits.id'),
@@ -168,10 +151,7 @@ class DepositFiles(Base):
 class Rock(Base):
     __tablename__ = 'rocks'
     __table_args__ = {
-        'comment':
-            '''
-            Store rock data.
-            '''
+        'comment': "Store rock data."
     }
 
     id = Column(GUID,
@@ -194,10 +174,7 @@ class Rock(Base):
 class Well(Base):
     __tablename__ = 'wells'
     __table_args__ = {
-        'comment':
-            '''
-            Store wells.
-            '''
+        'comment': "Store wells."
     }
 
     id = Column(GUID,
@@ -229,10 +206,7 @@ class Well(Base):
 class WellIntervals(Base):
     __tablename__ = 'well_intervals'
     __table_args__ = {
-        'comment':
-            '''
-            Lists well’s intervals.
-            '''
+        'comment': "Lists well’s intervals."
     }
 
     well_id = Column(ForeignKey('wells.id'),
@@ -266,10 +240,7 @@ class KnownBlock(Base):
     __table_args__ = (
         UniqueConstraint('well_id', 'size', 'center_x', 'center_y', 'center_z'),
         {
-            'comment':
-                '''
-                Stores known blocks.
-                '''
+            'comment': "Stores known blocks."
         }
     )
 
@@ -299,10 +270,7 @@ class KnownBlock(Base):
 class CrossValidation(Base):
     __tablename__ = 'cross_validations'
     __table_args__ = {
-        'comment':
-            '''
-            Stores cross-validations.
-            '''
+        'comment': "Stores cross-validations."
     }
 
     id = Column(GUID,
@@ -316,10 +284,7 @@ class CrossValidation(Base):
 class Metrics(Base):
     __tablename__ = 'metrics'
     __table_args__ = {
-        'comment':
-            '''
-            Stores metrics.
-            '''
+        'comment': "Stores metrics."
     }
 
     id = Column(GUID,
@@ -336,10 +301,7 @@ class Metrics(Base):
 class NeuralModel(Base):
     __tablename__ = 'neural_models'
     __table_args__ = {
-        'comment':
-            '''
-            Stores neural models.
-            '''
+        'comment': "Stores neural models."
     }
 
     id = Column(GUID,
@@ -368,10 +330,7 @@ class NeuralModel(Base):
 class NeuralModelExcludedWells(Base):
     __tablename__ = 'neural_models_excluded_wells'
     __table_args__ = {
-        'comment':
-            '''
-            Lists excluded wells from training.
-            '''
+        'comment': "Lists excluded wells from training."
     }
 
     neural_model_id = Column(ForeignKey('neural_models.id'),
@@ -385,10 +344,7 @@ class NeuralModelExcludedWells(Base):
 class NeuralModelMetrics(Base):
     __tablename__ = 'neural_models_metrics'
     __table_args__ = {
-        'comment':
-            '''
-            Lists metric data.
-            '''
+        'comment': "Lists metric data."
     }
 
     neural_model_id = Column(ForeignKey('neural_models.id'),
@@ -411,10 +367,7 @@ class PredictedBlock(Base):
         UniqueConstraint('neural_model_id', 'center_x', 'center_y', 'center_z'),
         Index('known_block_index', 'known_block_id', postgresql_using='hash'),
         {
-            'comment':
-                '''
-                Stores predicted blocks.
-                '''
+            'comment': "Stores predicted blocks."
         }
     )
 
@@ -443,10 +396,7 @@ class PredictedBlock(Base):
 class PredictedBlocksOutputs(Base):
     __tablename__ = 'predicted_blocks_outputs'
     __table_args__ = {
-        'comment':
-            '''
-            Lists predicted block outputs.
-            '''
+        'comment': "Lists predicted block outputs."
     }
 
     predicted_block_id = Column(ForeignKey('predicted_blocks.id'),
@@ -466,10 +416,7 @@ class Files(Base):
         UniqueConstraint('name', 'data_type'),
         Index('file_index', 'name', 'data_type', postgresql_using='hash'),
         {
-            'comment':
-                '''
-                Stores files.
-                '''
+            'comment': "Stores files."
         }
     )
 
