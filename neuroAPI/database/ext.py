@@ -5,7 +5,7 @@ from sqlalchemy.dialects.postgresql import UUID
 import uuid
 
 
-class GUID(TypeDecorator, ABC):
+class GUID(TypeDecorator):  # noqa
     """Platform-independent GUID type.
 
     Uses PostgreSQL's UUID type, otherwise uses
