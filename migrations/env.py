@@ -30,13 +30,13 @@ _driver = _config.get('DATABASE', 'DB_DRIVER')
 
 if _driver == 'sqlite':
     config.set_main_option('sqlalchemy.url',
-                           f'{_driver}:///{_config.get("DATABASE", "DB_PATH")}')
+                           f'{_driver}:///{_config.get("DATABASE", "DB_HOST")}')
 elif _driver == 'postgresql':
     config.set_main_option('sqlalchemy.url',
                            '{}://{}:{}@{}/{}'.format(_driver,
                                                      {_config.get("DATABASE", "DB_USER")},
                                                      {_config.get("DATABASE", "DB_PASS")},
-                                                     {_config.get("DATABASE", "DB_PATH")},
+                                                     {_config.get("DATABASE", "DB_HOST")},
                                                      {_config.get("DATABASE", "DB_NAME")}))
 else:
     raise NotImplemented
