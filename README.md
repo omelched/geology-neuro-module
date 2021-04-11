@@ -22,11 +22,26 @@
    1. `DB_DRIVER = sqlite`
    2. `DB_HOST = /your/path/to/database.db`
    3. Empty other values
-2. Init (or upgrade existing) database structure: `alembic upgrade head`
+2. Go to project folder: `cd /your/path/to/geology-neuro-module`
+3. Activate virtual environment: `source venv/bin/activate`
+4. Init (or upgrade existing) database structure: `alembic upgrade head`
+5. Deactivate virtual environment: `deactivate`
 
 ### PostgreSQL
 
 1. Install PostreSQL from [here](https://www.postgresql.org/download/)
+2. Create empty database with locale = `*.UTF-8`
+3. Set up `[DATABASE]` section in `CONFIG.cfg`:
+   1. `DB_DRIVER = postgresql`
+   2. `DB_USER = postgres` (by default)
+   1. `DB_PASS = <password>`
+   2. `DB_HOST = <pg_host>:<pg_port>`
+   3. `DB_NAME = <your_db_name>`
+2. Go to project folder: `cd /your/path/to/geology-neuro-module`
+3. Activate virtual environment: `source venv/bin/activate`
+4. Init (or upgrade existing) database structure: `alembic upgrade head`
+5. Deactivate virtual environment: `deactivate`
+
 ## How to launch
 
 1. Go to project folder `cd /your/path/to/geologyAPI`
