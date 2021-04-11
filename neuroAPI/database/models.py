@@ -29,14 +29,6 @@ class BorderPointType(enum.Enum):
     max = 1
     min = 2
 
-
-class MIMEDataType(enum.Enum):
-    xlsx = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    xls = "application/vnd.ms-excel"
-    xlsb = "application/vnd.ms-excel.sheet.binary.macroEnabled.12"
-    csv = "text/csv"
-
-
 # TABLES
 # TODO: add back_populates
 
@@ -317,7 +309,7 @@ class NeuralModel(Base):
                         nullable=False,
                         comment='Max epoch count')
     cross_validation_id = Column(ForeignKey('cross_validations.id'),
-                                 nullable=False,
+                                 nullable=True,
                                  comment='Cross-validation grouping entity id')
     structure = Column(LargeBinary,
                        nullable=False,
@@ -410,11 +402,29 @@ class PredictedBlocksOutputs(Base):
                    comment='probability [0, 1]')
 
 
-class Files(Base):
+class ContentType(Base):
+    __tablename__ = 'content_types'
+    __table_args__ = {
+        'comment': ("Stores MIME content_types, e.g.:"
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet  //.xlsx"
+                    "application/vnd.ms-excel  //.xls"
+                    "application/vnd.ms-excel.sheet.binary.macroEnabled.12 //.xlsb"
+                    "text/csv  //.csv")
+    }
+
+    id = Column(GUID,
+                primary_key=True, default=uuid.uuid4,
+                comment='Content type id')
+    name = Column(String(127),
+                  nullable=False, unique=True,
+                  comment='MIME content type')
+
+
+class File(Base):
     __tablename__ = 'files'
     __table_args__ = (
         UniqueConstraint('name', 'data_type'),
-        Index('file_index', 'name', 'data_type', postgresql_using='hash'),
+        Index('file_index', 'name', 'data_type'),
         {
             'comment': "Stores files."
         }
@@ -425,10 +435,10 @@ class Files(Base):
                 comment='File id')
     name = Column(String(255),
                   nullable=False,
-                  comment='riginal filename with extension, e.g. "text.xlsx"')
-    data_type = Column(Enum(MIMEDataType, values_callable=lambda obj: [e.value for e in obj]),
+                  comment='original filename with extension, e.g. "text.xlsx"')
+    data_type = Column(ForeignKey('content_types.id'),
                        nullable=False,
-                       comment='File data_type')
+                       comment='MIME content type')
     description = Column(Text,
                          nullable=True,
                          comment='Long description')
@@ -438,3 +448,4 @@ class Files(Base):
     content = Column(LargeBinary,
                      nullable=False,
                      comment='File itself in binary')
+
