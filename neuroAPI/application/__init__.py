@@ -5,4 +5,4 @@ server = Flask(__name__)
 server.config.from_object(config)
 logger.info('OK')
 
-from neuroAPI.application.api_handler import api  # noqa
+import neuroAPI.application.rpc_handler  # noqa
