@@ -50,7 +50,7 @@ def predict_block_by_id(block_id: str, neural_model_id: str) -> Mapping[str, flo
 
     :param block_id: UUID of known block to predict with
     :type block_id: str (format: UUID)
-    :param neural_model_id: UUID of neural model to predict with
+    :param neural_model_id: UUID of neural model to predict with (if not specified will train on non-CV NN found on KnownBlock.well_id.deposit_id)
     :type neural_model_id: str (format: UUID)
 
     :return: Predicted dictionary (keys = rocks UUID, values = probability)
@@ -59,3 +59,39 @@ def predict_block_by_id(block_id: str, neural_model_id: str) -> Mapping[str, flo
     return {str(uuid.uuid4()): 0.1,
             str(uuid.uuid4()): 0.3,
             str(uuid.uuid4()): 0.6}
+
+
+@api.dispatcher.add_method(name='train.singular')
+def train_neural_network(deposit_id: str, max_epoch: int, block_size: float) -> str:
+    """
+    Starts training.
+
+    :param deposit_id: UUID of deposit to train on
+    :type deposit_id: str (format: UUID)
+    :param max_epoch: max epoch number to train
+    :type max_epoch: int
+    :param block_size: size of blocks to create (if not found in DB)
+    :type block_size: float
+
+    :return: Returns UUID of NN, which WILL BE created in DB in case of succesfull training
+    :rtype: str
+    """
+    return str(uuid.uuid4()
+               
+
+@api.dispatcher.add_method(name='train.cross_validation')
+def train_neural_network(deposit_id: str, max_epoch: int, block_size: float) -> str:
+    """
+    Starts cross-validation training.
+
+    :param deposit_id: UUID of deposit to train on
+    :type deposit_id: str (format: UUID)
+    :param max_epoch: max epoch number to train
+    :type max_epoch: int
+    :param block_size: size of blocks to create (if not found in DB)
+    :type block_size: float
+
+    :return: Returns UUID of cross-validation object, which WILL BE created in DB in case of succesfull training
+    :rtype: str
+    """
+    return str(uuid.uuid4()
