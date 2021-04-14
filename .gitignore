@@ -131,4 +131,6 @@ dmypy.json
 # ++ omelched
 .idea/
 logs/
+CONFIG.cfg
+database.db
 # -- omelched

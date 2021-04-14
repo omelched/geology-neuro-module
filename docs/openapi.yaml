@@ -1,0 +1,151 @@
+openapi: 3.0.1
+info:
+  title: geology-neuro-module API
+  description: API documentation for [geology-neuro-module](https://github.com/omelched/geology-neuro-module)
+  contact:
+    name: Author
+    email: omelched@gmail.com
+    url: http://github.com/omelched
+  version: 0.1.0
+servers:
+  - url: .../v1
+    description: Main server
+paths:
+  /neuralModel/train:
+    post:
+      summary: Create neural network
+      description: Creates new neural network based on value in `parameters`, if not exists already
+      operationId: trainNeuralModel
+      requestBody:
+        description: New neural network's parameters
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - depositID
+                - blockSize
+                - epochsCount
+              properties:
+                depositId:
+                  type: string
+                  format: objectId
+                  nullable: False
+                  description: Deposit's ID in database
+                  example: '000000000000000000000000'
+                blockSize:
+                  type: number
+                  format: float
+                  nullable: False
+                  description: Size of blocks
+                  example: 0.5
+                epochsCount:
+                  type: integer
+                  nullable: False
+                  description: Number of epochs for training
+                  example: 50
+      responses:
+        202:
+          description: neural model created, training has been started
+          content:
+            application/json: 
+              schema:
+                $ref: '#/components/schemas/NeuralModel'
+        204:
+          description: neural model with this parameters is already created, or in training
+          content:
+            application/json: 
+              schema:
+                $ref: '#/components/schemas/NeuralModel'
+        400:
+          description: error in `parameters` parameter, details in body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMsg'
+        404:
+          description: no Deposit with `parameters.depositId` in DB
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMsg'
+        401:
+          description: unauthorized
+        403:
+          description: Deposit does not belong to user, access forbidden or not `user.is_admin`
+      security:
+      - basic_auth: []
+
+components:
+  schemas:
+    NeuralModel:
+      type: object
+      properties:
+        id:
+          type: string
+          format: objectId
+          nullable: False
+          description: NeuralModel's ID in database
+          example: '000000000000000000000000'
+        parameters:
+          type: object
+          properties:
+            size:
+              type: number
+              format: float
+              nullable: False
+              description: Size of blocks
+              example: 0.5
+            deposit:
+              type: string
+              format: objectId
+              nullable: False
+              description: Deposit's ID in database
+              example: '000000000000000000000000'
+          description: NeuralModel's training parameters
+        epochsCount:
+          type: integer
+          description: Number of epochs for training
+          nullable: False
+          example: 50
+        structure:
+          type: string
+          format: binary
+          description: NeuralModel's architecture (keras)
+          nullable: True
+        weights:
+          type: string
+          format: binary
+          description: NeuralModel's weights (keras)
+          nullable: True
+        excludedWells:
+          type: array
+          items:
+            type: string
+            format: objectId
+            description: Well's ID in database
+            example: '000000000000000000000000'
+          nullable: True
+          description: Wells, which were excluded from NeuralModel's training
+          example:
+            ['000000000000000000000000', '000000000000000000000000']
+        crossValidation:
+          type: string
+          format: objectId
+          nullable: True
+          description: CrossValidation's ID in database (grouping property)
+          example: '000000000000000000000000'
+      required:
+        - id
+        - parameters
+        - epochsCount
+    ErrorMsg:
+      type: object
+      properties:
+        msg:
+          type: string
+          description: Internal error description
+securitySchemes:
+    basic_auth:
+      type: http
+      scheme: basic
