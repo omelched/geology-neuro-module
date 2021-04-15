@@ -6,8 +6,7 @@ from sqlalchemy import pool
 from alembic import context
 
 from neuroAPI.database.models import Base
-from neuroAPI.utils import config as _config # noqa
-
+from neuroAPI.utils import config as _config  # noqa
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -41,10 +40,10 @@ elif _driver == 'postgresql':
                                                      _config.get("DATABASE", "DB_HOST"),
                                                      _config.get("DATABASE", "DB_NAME")))
     print('{}://{}:{}@{}/{}'.format(_driver,
-                                                     _config.get("DATABASE", "DB_USER"),
-                                                     _config.get("DATABASE", "DB_PASS"),
-                                                     _config.get("DATABASE", "DB_HOST"),
-                                                     _config.get("DATABASE", "DB_NAME")))
+                                    _config.get("DATABASE", "DB_USER"),
+                                    _config.get("DATABASE", "DB_PASS"),
+                                    _config.get("DATABASE", "DB_HOST"),
+                                    _config.get("DATABASE", "DB_NAME")))
 else:
     raise NotImplemented
 

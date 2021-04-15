@@ -2,10 +2,10 @@
 
 ## How to install
 
-1. Install `python3.8` from [here](https://www.python.org/downloads/release/python-388/)
-   or `brew install python@3.8`
+1. Install `python3.9` from [here](https://www.python.org/downloads/release/python-390/)
+   or `brew install python@3.9`
 2. Go to project folder: `cd /your/path/to/geology-neuro-module`
-3. Setup virtual environment: `python3.8 -m venv venv`
+3. Setup virtual environment: `python3.9 -m venv venv`
 4. Activate virtual environment: `source venv/bin/activate`
 5. Install required packages: `python -m pip install -r requirements.txt`
 6. Copy [docs/golden_CONFIG.cfg](docs/golden_CONFIG.cfg) in root and rename to `CONFIG.cfg`

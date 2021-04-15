@@ -76,7 +76,7 @@ def train_neural_network(deposit_id: str, max_epoch: int, block_size: float) -> 
     :return: Returns UUID of NN, which WILL BE created in DB in case of succesfull training
     :rtype: str
     """
-    return str(uuid.uuid4()
+    return str(uuid.uuid4())
                
 
 @api.dispatcher.add_method(name='train.cross_validation')
@@ -94,4 +94,4 @@ def train_neural_network(deposit_id: str, max_epoch: int, block_size: float) -> 
     :return: Returns UUID of cross-validation object, which WILL BE created in DB in case of succesfull training
     :rtype: str
     """
-    return str(uuid.uuid4()
+    return str(uuid.uuid4())
