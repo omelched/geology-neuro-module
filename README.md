@@ -4,6 +4,7 @@
 
 1. Install `python3.9` from [here](https://www.python.org/downloads/release/python-390/)
    or `brew install python@3.9`
+1. Install `python3-dev`, `libpq-dev`, `build-essential`
 2. Go to project folder: `cd /your/path/to/geology-neuro-module`
 3. Setup virtual environment: `python3.9 -m venv venv`
 4. Activate virtual environment: `source venv/bin/activate`
