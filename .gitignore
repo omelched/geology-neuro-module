@@ -133,4 +133,5 @@ dmypy.json
 logs/
 CONFIG.cfg
 database.db
+neuroAPI/logs
 # -- omelched
