@@ -58,8 +58,6 @@ class BaseMetric(metaclass=abc.ABCMeta):
 
         return self._calculate(true, pred)
 
-c = ConfusionMatrix()
-c.save_obj()
 
 class DatabaseMetricMixin(BaseMetric, neuroAPI.database.models.NeuralModelMetrics, metaclass=abc.ABCMeta):
 

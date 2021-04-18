@@ -1,8 +1,8 @@
 """init
 
-Revision ID: 9dbf56d236cb
+Revision ID: 6262f227c7aa
 Revises: 
-Create Date: 2021-04-11 12:56:22.677640
+Create Date: 2021-04-19 01:02:41.851177
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 import neuroAPI.database.ext
 
 # revision identifiers, used by Alembic.
-revision = '9dbf56d236cb'
+revision = '6262f227c7aa'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -35,9 +35,7 @@ def upgrade():
                     sa.Column('name', sa.String(length=127), nullable=False, comment='MIME content type'),
                     sa.PrimaryKeyConstraint('id'),
                     sa.UniqueConstraint('name'),
-                    comment='Stores MIME content_types, e.g.:application/vnd.openxmlformats-officedocument'
-                            '.spreadsheetml.sheet  //.xlsxapplication/vnd.ms-excel  '
-                            '//.xlsapplication/vnd.ms-excel.sheet.binary.macroEnabled.12 //.xlsbtext/csv  //.csv '
+                    comment='Stores MIME content_types, e.g.:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet  //.xlsxapplication/vnd.ms-excel  //.xlsapplication/vnd.ms-excel.sheet.binary.macroEnabled.12 //.xlsbtext/csv  //.csv'
                     )
     op.create_table('cross_validations',
                     sa.Column('id', neuroAPI.database.ext.GUID(), nullable=False, comment='Cross-validation id'),
@@ -55,7 +53,10 @@ def upgrade():
                     sa.Column('id', neuroAPI.database.ext.GUID(), nullable=False, comment='Metric id'),
                     sa.Column('name', sa.String(length=64), nullable=False, comment='Metric name'),
                     sa.Column('description', sa.Text(), nullable=True, comment='Metric description, e.g. formulae'),
+                    sa.Column('type', sa.Enum('class_stat', 'overall_stat', name='metrictype'), nullable=False,
+                              comment='Metric type'),
                     sa.PrimaryKeyConstraint('id'),
+                    sa.UniqueConstraint('name'),
                     comment='Stores metrics.'
                     )
     op.create_table('deposit_borders',
@@ -175,9 +176,12 @@ def upgrade():
                               comment='Neural model id'),
                     sa.Column('metric_id', neuroAPI.database.ext.GUID(), nullable=False, comment='Metric id'),
                     sa.Column('epoch', sa.Integer(), nullable=False, comment='Current epoch'),
+                    sa.Column('rock_id', neuroAPI.database.ext.GUID(), nullable=True,
+                              comment='Rock id (if metric.type = class_stat))'),
                     sa.Column('value', sa.Text(), nullable=False, comment='Metric value'),
                     sa.ForeignKeyConstraint(['metric_id'], ['metrics.id'], ),
                     sa.ForeignKeyConstraint(['neural_model_id'], ['neural_models.id'], ),
+                    sa.ForeignKeyConstraint(['rock_id'], ['rocks.id'], ),
                     sa.PrimaryKeyConstraint('neural_model_id', 'metric_id', 'epoch'),
                     comment='Lists metric data.'
                     )
@@ -270,7 +274,7 @@ def downgrade():
     op.drop_table('app_users')
     # ### end Alembic commands ###
 
-    # ### omelched: drop postgresql types
+    # ### omelched: drop all postgresql types
 
     from sqlalchemy import orm
 
@@ -278,13 +282,13 @@ def downgrade():
     if bind.dialect.name == 'postgresql':
         session = orm.Session(bind=bind)
         result = session.execute('''
-        SELECT      t.typname as type 
-        FROM        pg_type t 
-        LEFT JOIN   pg_catalog.pg_namespace n ON n.oid = t.typnamespace 
-        WHERE       (t.typrelid = 0 OR (SELECT c.relkind = 'c' FROM pg_catalog.pg_class c WHERE c.oid = t.typrelid)) 
-        AND     NOT EXISTS(SELECT 1 FROM pg_catalog.pg_type el WHERE el.oid = t.typelem AND el.typarray = t.oid)
-        AND     n.nspname NOT IN ('pg_catalog', 'information_schema');
-        ''')
+         SELECT      t.typname as type 
+         FROM        pg_type t 
+         LEFT JOIN   pg_catalog.pg_namespace n ON n.oid = t.typnamespace 
+         WHERE       (t.typrelid = 0 OR (SELECT c.relkind = 'c' FROM pg_catalog.pg_class c WHERE c.oid = t.typrelid)) 
+         AND     NOT EXISTS(SELECT 1 FROM pg_catalog.pg_type el WHERE el.oid = t.typelem AND el.typarray = t.oid)
+         AND     n.nspname NOT IN ('pg_catalog', 'information_schema');
+         ''')
         for row in result:
             op.execute(f'DROP TYPE {row[0]};')
         session.commit()
