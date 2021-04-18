@@ -152,6 +152,20 @@ class Recall(DatabaseMetricMixin):
                 + len(b_concat[(b_concat[:, 0] == True) & (b_concat[:, 1] == False)]))
 
 
+class Precision(DatabaseMetricMixin):
+    _name = 'Precision'
+
+    def __init__(self, neural_network: neuroAPI.neuralmodule.network.NeuralNetwork, epoch: int,
+                 true: torch.Tensor, pred: torch.Tensor, name: str = None):
+        super(Precision, self).__init__(neural_network, epoch, true, pred, name)
+
+    def _calculate(self, true: torch.Tensor, pred: torch.Tensor) -> float:
+        b_concat = torch.stack((torch.flatten(true), torch.flatten(pred))).T > 0.5
+        return len(b_concat[(b_concat[:, 0] == True) & (b_concat[:, 1] == True)]) / (
+                len((b_concat[(b_concat[:, 0] == True) & (b_concat[:, 1] == True)]))
+                + len(b_concat[(b_concat[:, 0] == False) & (b_concat[:, 1] == True)]))
+
+
 class CosineSimilarity(DatabaseMetricMixin):
     _name = 'CosineSimilarity'
 
