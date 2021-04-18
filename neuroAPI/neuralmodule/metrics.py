@@ -1,94 +1,75 @@
-import abc
-from uuid import uuid4, UUID
-from typing import Union
-from pycm import ConfusionMatrix
-import torch
-import pandas as pd
+from uuid import UUID
+from typing import Union, List
+from abc import abstractmethod
 
-import neuroAPI.database.models
-import neuroAPI.neuralmodule.network
+import torch
+
+from neuroAPI.database.models import NeuralModelMetrics, MetricType, Rock
+from neuroAPI.neuralmodule.network import NeuralNetwork
 
 _METRIC_ID_CACHE: dict[str, UUID] = {}  # to buffer metric.name -> metric.id mapping
 
 
-class BaseMetric(metaclass=abc.ABCMeta):
-    """
-    Abstract class for metrics.
+class BaseMetric(NeuralModelMetrics):
 
-    All metrics MUST inherit this class and redefine _calculate() method.
-    """
-    _name = f'metric{uuid4()}'
-    _value = None
-
-    def __init__(self, true: torch.Tensor, pred: torch.Tensor, name: str = None):
-        if name:
-            if isinstance(name, str):
-                self._name = name
-            else:
-                raise ValueError('BaseMetric:__init__:Name!')
-
-        self._value = self.calculate_result(true, pred)
-
-    @property
-    def get_value(self):
-        return self._value
-
-    @property
-    def get_name(self):
-        return self._name
-
-    @abc.abstractmethod
-    def _calculate(self, true: torch.Tensor, pred: torch.Tensor) -> Union[float, list[list[int]]]:
-        """
-        MUST be implemented in non-abstract subclasses.
-
-        :param true: Tensor with true data.
-        :param pred: Tensor with predicted data.
-
-        :return: Metric value.
-        :rtype: float or list[list[int]] (for confusion matrix)
-        """
-        raise NotImplementedError
-
-    def calculate_result(self, true: torch.Tensor, pred: torch.Tensor):
-        if not isinstance(true, torch.Tensor):
+    def __init__(self, neural_network: NeuralNetwork, epoch: int, **kwargs):  # TODO: 3 AM shitcoding. refactor
+        if not isinstance(neural_network, NeuralNetwork):
             raise ValueError
-        if not isinstance(pred, torch.Tensor):
+
+        if isinstance(kwargs['name'], str) and isinstance(kwargs['mtype'], MetricType):
+            _name = kwargs['name']
+            mtype = kwargs['mtype']
+        else:
+            raise ValueError  # TODO: log + sys.exc_info()[0]
+
+        if 'value' in kwargs.keys():
+            self.value = kwargs['value']
+        elif all(k in kwargs for k in ('true', 'pred')):
+            self.value = self.calculate(kwargs['true'], kwargs['pred'])
+        else:
+            raise NotImplementedError
+
+        self.epoch = int(epoch)  # TODO: catch exeptions
+
+        if not self.name in _METRIC_ID_CACHE.keys():
+            metric_id = self.get_create_metric(_name, mtype)
+            _METRIC_ID_CACHE[_name] = metric_id
+        else:
+            metric_id = _METRIC_ID_CACHE[_name]
+
+        self.metric_id = metric_id
+        self.neural_model_id = neural_network.id
+
+    def calculate(self, true: torch.Tensor, pred: torch.Tensor) -> Union[float, List[List[int]]]:
+        if not isinstance(true, torch.Tensor) or not isinstance(pred, torch.Tensor):
             raise ValueError
 
         return self._calculate(true, pred)
 
+    @staticmethod
+    @abstractmethod
+    def _calculate(true: torch.Tensor, pred: torch.Tensor) -> Union[float, List[List[int]]]:
+        raise NotImplementedError
 
-class DatabaseMetricMixin(BaseMetric, neuroAPI.database.models.NeuralModelMetrics, metaclass=abc.ABCMeta):
 
-    def __init__(self, neural_network: neuroAPI.neuralmodule.network.NeuralNetwork, epoch: int,
-                 session=None, *args, **kwargs):
-        if not isinstance(neural_network, neuroAPI.neuralmodule.network.NeuralNetwork):
-            raise TypeError  # TODO: log exception
+class PYCMClassStatMetric(BaseMetric):
 
-        epoch = int(epoch)  # TODO: catch exception
+    def __init__(self, neural_model: NeuralNetwork, epoch: int, rock: Rock, value: Union[str, float, int], name: str):
+        super(PYCMClassStatMetric, self).__init__(neural_model, epoch, value=value, name=name,
+                                                  type=MetricType.class_stat)
+        self.rock_id = rock.id
 
-        super().__init__(*args, **kwargs)
+    @staticmethod
+    def _calculate(true: torch.Tensor, pred: torch.Tensor) -> Union[float, List[List[int]]]:
+        raise NotImplementedError
 
-        try:
-            metric_id = _METRIC_ID_CACHE[self.get_name]  # TODO: checksum/hash of table for sanity?
-        except KeyError:
-            metric_id = self.get_create_metric(name=self.get_name, session=session)
-            _METRIC_ID_CACHE[self.get_name] = metric_id
 
-        self.neural_model_id = neural_network.id
-        self.metric_id = metric_id
-        self.epoch = epoch
-        self.value = self.get_value
+class PYCMOverallStatMetric(BaseMetric):
 
-#
-# class CategoricalAccuracy(DatabaseMetricMixin):
-#     _name = 'CategoricalAccuracy'
-#
-#     def __init__(self, neural_network: neuroAPI.neuralmodule.network.NeuralNetwork, epoch: int,
-#                  true: torch.Tensor, pred: torch.Tensor, name: str = None):
-#         super(CategoricalAccuracy, self).__init__(neural_network, epoch, true, pred, name)
-#
-#     def _calculate(self, true: torch.Tensor, pred: torch.Tensor) -> float:
-#         return (sum(torch.argmax(pred, dim=1) == torch.argmax(true, dim=1)) / len(pred)).item()
-#
+    def __init__(self, neural_model: NeuralNetwork, epoch: int, value: Union[str, float, int], name:str):
+        super(PYCMOverallStatMetric, self).__init__(neural_model, epoch, value=value, name=name,
+                                                    type=MetricType.overall_stat)
+
+    @staticmethod
+    def _calculate(true: torch.Tensor, pred: torch.Tensor) -> Union[float, List[List[int]]]:
+        raise NotImplementedError

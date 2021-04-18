@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 
-from neuroAPI.neuralcore.models import NeuralNetwork
+from neuroAPI.neuralmodule.network import NeuralNetwork
 model = NeuralNetwork(3)
 
 learning_rate = 1e-3

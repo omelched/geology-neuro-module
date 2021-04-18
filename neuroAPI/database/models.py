@@ -298,7 +298,7 @@ class Metric(Base):
     description = Column(Text,
                          nullable=True,
                          comment='Metric description, e.g. formulae')
-    type = Column(Enum(MetricType),
+    mtype = Column(Enum(MetricType), name='type',
                   nullable=False,
                   comment='Metric type')
 
@@ -369,7 +369,7 @@ class NeuralModelMetrics(Base):
                    comment='Metric value')
 
     @staticmethod
-    def get_create_metric(name: str, session: Session = None) -> uuid.UUID:
+    def get_create_metric(name: str, mtype: MetricType, session: Session = None) -> uuid.UUID:
         standalone = False
 
         if not session:
@@ -384,7 +384,7 @@ class NeuralModelMetrics(Base):
                 session.rollback()
             return idx
 
-        metric = Metric(name=name)
+        metric = Metric(name=name, mtype=mtype)
 
         try:
             session.add(metric)
