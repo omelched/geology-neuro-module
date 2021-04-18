@@ -31,7 +31,7 @@ class BaseMetric(metaclass=abc.ABCMeta):
         return self._name
 
     @abc.abstractmethod
-    def _calculate(self, true: torch.Tensor, pred: torch.Tensor) -> Union[float, list[list[float]]]:
+    def _calculate(self, true: torch.Tensor, pred: torch.Tensor) -> Union[float, list[list[int]]]:
         """
         Must be implemented in subclasses
 
@@ -39,7 +39,7 @@ class BaseMetric(metaclass=abc.ABCMeta):
         :param pred: Tensor with predicted data.
 
         :return: Metric value.
-        :rtype: float or list[list[float]] (for confusion matrix)
+        :rtype: float or list[list[int]] (for confusion matrix)
         """
         raise NotImplementedError
 
@@ -195,6 +195,6 @@ class ConfusionMatrix(DatabaseMetricMixin):
                  true: torch.Tensor, pred: torch.Tensor, name: str = None):
         super(ConfusionMatrix, self).__init__(neural_network, epoch, true, pred, name)
 
-    def _calculate(self, true: torch.Tensor, pred: torch.Tensor) -> list:
+    def _calculate(self, true: torch.Tensor, pred: torch.Tensor) -> list[list[int]]:
 
         return pd.crosstab(torch.argmax(true, dim=1), torch.argmax(pred, dim=1)).values.tolist()
