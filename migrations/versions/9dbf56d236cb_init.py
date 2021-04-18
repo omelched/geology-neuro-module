@@ -175,7 +175,7 @@ def upgrade():
                               comment='Neural model id'),
                     sa.Column('metric_id', neuroAPI.database.ext.GUID(), nullable=False, comment='Metric id'),
                     sa.Column('epoch', sa.Integer(), nullable=False, comment='Current epoch'),
-                    sa.Column('value', sa.Numeric(), nullable=False, comment='Metric value'),
+                    sa.Column('value', sa.Text(), nullable=False, comment='Metric value'),
                     sa.ForeignKeyConstraint(['metric_id'], ['metrics.id'], ),
                     sa.ForeignKeyConstraint(['neural_model_id'], ['neural_models.id'], ),
                     sa.PrimaryKeyConstraint('neural_model_id', 'metric_id', 'epoch'),

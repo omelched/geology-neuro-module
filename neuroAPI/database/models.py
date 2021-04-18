@@ -3,13 +3,16 @@ import enum
 from datetime import datetime
 
 from sqlalchemy import Column, String, Numeric, ForeignKey, Integer, CheckConstraint, UniqueConstraint, Text, \
-    LargeBinary, Index, DateTime
-from sqlalchemy.orm import declarative_base
+    LargeBinary, Index, DateTime, select
+from sqlalchemy.orm import declarative_base, Session
 from sqlalchemy.types import CHAR, Enum
+from sqlalchemy_utils import force_instant_defaults
 
 from neuroAPI.database.ext import GUID
+from neuroAPI.database import database_handler
 
 Base = declarative_base()
+force_instant_defaults()
 
 
 # ENUMS
@@ -28,6 +31,7 @@ class ContactInformationType(enum.Enum):
 class BorderPointType(enum.Enum):
     max = 1
     min = 2
+
 
 # TABLES
 # TODO: add back_populates
@@ -273,7 +277,7 @@ class CrossValidation(Base):
                   comment='Cross-validation name')
 
 
-class Metrics(Base):
+class Metric(Base):
     __tablename__ = 'metrics'
     __table_args__ = {
         'comment': "Stores metrics."
@@ -348,9 +352,38 @@ class NeuralModelMetrics(Base):
     epoch = Column(Integer,
                    primary_key=True,
                    comment='Current epoch')
-    value = Column(Numeric,
+    value = Column(Text,
                    nullable=False,
                    comment='Metric value')
+
+    @staticmethod
+    def get_create_metric(name: str, session: Session = None) -> uuid.UUID:
+        standalone = False
+
+        if not session:
+            session = database_handler.get_session()
+            standalone = True
+
+        result = session.execute(select(Metric).where(Metric.name == name))
+
+        if result:
+            idx = result.fetchone()[0].id
+            if standalone:
+                session.rollback()
+            return idx
+
+        metric = Metric(name=name)
+
+        try:
+            session.add(metric)
+        except Exception as e:  # TODO: custom exeptions with sys.exc_info()[0]
+            session.rollback()
+            raise e
+        else:
+            if standalone:
+                session.commit()
+
+        return metric.id
 
 
 class PredictedBlock(Base):
@@ -448,4 +481,3 @@ class File(Base):
     content = Column(LargeBinary,
                      nullable=False,
                      comment='File itself in binary')
-
