@@ -1,15 +1,22 @@
 import abc
 from uuid import uuid4, UUID
 from typing import Union
-
+from pycm import ConfusionMatrix
 import torch
 import pandas as pd
 
 import neuroAPI.database.models
 import neuroAPI.neuralmodule.network
 
+_METRIC_ID_CACHE: dict[str, UUID] = {}  # to buffer metric.name -> metric.id mapping
+
 
 class BaseMetric(metaclass=abc.ABCMeta):
+    """
+    Abstract class for metrics.
+
+    All metrics MUST inherit this class and redefine _calculate() method.
+    """
     _name = f'metric{uuid4()}'
     _value = None
 
@@ -33,7 +40,7 @@ class BaseMetric(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def _calculate(self, true: torch.Tensor, pred: torch.Tensor) -> Union[float, list[list[int]]]:
         """
-        Must be implemented in subclasses
+        MUST be implemented in non-abstract subclasses.
 
         :param true: Tensor with true data.
         :param pred: Tensor with predicted data.
@@ -51,9 +58,8 @@ class BaseMetric(metaclass=abc.ABCMeta):
 
         return self._calculate(true, pred)
 
-
-_METRIC_ID_CACHE: dict[str, UUID] = {}  # to buffer metric.name -> metric.id mapping
-
+c = ConfusionMatrix()
+c.save_obj()
 
 class DatabaseMetricMixin(BaseMetric, neuroAPI.database.models.NeuralModelMetrics, metaclass=abc.ABCMeta):
 
@@ -77,124 +83,14 @@ class DatabaseMetricMixin(BaseMetric, neuroAPI.database.models.NeuralModelMetric
         self.epoch = epoch
         self.value = self.get_value
 
-
-class CategoricalAccuracy(DatabaseMetricMixin):
-    _name = 'CategoricalAccuracy'
-
-    def __init__(self, neural_network: neuroAPI.neuralmodule.network.NeuralNetwork, epoch: int,
-                 true: torch.Tensor, pred: torch.Tensor, name: str = None):
-        super(CategoricalAccuracy, self).__init__(neural_network, epoch, true, pred, name)
-
-    def _calculate(self, true: torch.Tensor, pred: torch.Tensor) -> float:
-        return (sum(torch.argmax(pred, dim=1) == torch.argmax(true, dim=1)) / len(pred)).item()
-
-
-class BinaryAccuracy(DatabaseMetricMixin):
-    _name = 'BinaryAccuracy'
-
-    def __init__(self, neural_network: neuroAPI.neuralmodule.network.NeuralNetwork, epoch: int,
-                 true: torch.Tensor, pred: torch.Tensor, name: str = None):
-        super(BinaryAccuracy, self).__init__(neural_network, epoch, true, pred, name)
-
-    def _calculate(self, true: torch.Tensor, pred: torch.Tensor) -> float:
-        b_concat = torch.stack((torch.flatten(true), torch.flatten(pred))).T > 0.5
-        return len(b_concat[b_concat[:, 0] == b_concat[:, 1]]) / len(b_concat)
-
-
-class CategoricalCrossentopy(DatabaseMetricMixin):
-    _name = 'CategoricalCrossentopy'
-
-    def __init__(self, neural_network: neuroAPI.neuralmodule.network.NeuralNetwork, epoch: int,
-                 true: torch.Tensor, pred: torch.Tensor, name: str = None):
-        super(CategoricalCrossentopy, self).__init__(neural_network, epoch, true, pred, name)
-
-    def _calculate(self, true: torch.Tensor, pred: torch.Tensor) -> float:
-        concat = torch.stack((torch.flatten(true), torch.flatten(pred))).T
-        return (-concat[:, 1].clamp(min=0.000001, max=0.999999).log() * concat[:, 0]).mean().item()
-
-
-class BinaryCrossentropy(DatabaseMetricMixin):
-    _name = 'BinaryCrossentropy'
-
-    def __init__(self, neural_network: neuroAPI.neuralmodule.network.NeuralNetwork, epoch: int,
-                 true: torch.Tensor, pred: torch.Tensor, name: str = None):
-        super(BinaryCrossentropy, self).__init__(neural_network, epoch, true, pred, name)
-
-    def _calculate(self, true: torch.Tensor, pred: torch.Tensor) -> float:
-        concat = torch.stack((torch.flatten(true), torch.clamp(torch.flatten(pred), min=0.000001, max=0.999999))).T
-        return torch.mean(torch.Tensor([-1 * torch.log(row[1]) if row[0] == 1
-                                        else -1 * torch.log(1 - row[1]) for row in concat])).item()
-
-
-class MeanSquaredError(DatabaseMetricMixin):
-    _name = 'MeanSquaredError'
-
-    def __init__(self, neural_network: neuroAPI.neuralmodule.network.NeuralNetwork, epoch: int,
-                 true: torch.Tensor, pred: torch.Tensor, name: str = None):
-        super(MeanSquaredError, self).__init__(neural_network, epoch, true, pred, name)
-
-    def _calculate(self, true: torch.Tensor, pred: torch.Tensor) -> float:
-        concat = torch.stack((torch.flatten(true), torch.flatten(pred))).T
-        return torch.div(torch.sum(torch.square(torch.subtract(concat[:, 0], concat[:, 1]))), len(concat)).item()
-
-
-class Recall(DatabaseMetricMixin):
-    _name = 'Recall'
-
-    def __init__(self, neural_network: neuroAPI.neuralmodule.network.NeuralNetwork, epoch: int,
-                 true: torch.Tensor, pred: torch.Tensor, name: str = None):
-        super(Recall, self).__init__(neural_network, epoch, true, pred, name)
-
-    def _calculate(self, true: torch.Tensor, pred: torch.Tensor) -> float:
-        b_concat = torch.stack((torch.flatten(true), torch.flatten(pred))).T > 0.5
-        return len(b_concat[(b_concat[:, 0] == True) & (b_concat[:, 1] == True)]) / (
-                len((b_concat[(b_concat[:, 0] == True) & (b_concat[:, 1] == True)]))
-                + len(b_concat[(b_concat[:, 0] == True) & (b_concat[:, 1] == False)]))
-
-
-class Precision(DatabaseMetricMixin):
-    _name = 'Precision'
-
-    def __init__(self, neural_network: neuroAPI.neuralmodule.network.NeuralNetwork, epoch: int,
-                 true: torch.Tensor, pred: torch.Tensor, name: str = None):
-        super(Precision, self).__init__(neural_network, epoch, true, pred, name)
-
-    def _calculate(self, true: torch.Tensor, pred: torch.Tensor) -> float:
-        b_concat = torch.stack((torch.flatten(true), torch.flatten(pred))).T > 0.5
-        return len(b_concat[(b_concat[:, 0] == True) & (b_concat[:, 1] == True)]) / (
-                len((b_concat[(b_concat[:, 0] == True) & (b_concat[:, 1] == True)]))
-                + len(b_concat[(b_concat[:, 0] == False) & (b_concat[:, 1] == True)]))
-
-
-class CosineSimilarity(DatabaseMetricMixin):
-    _name = 'CosineSimilarity'
-
-    def __init__(self, neural_network: neuroAPI.neuralmodule.network.NeuralNetwork, epoch: int,
-                 true: torch.Tensor, pred: torch.Tensor, name: str = None):
-        super(CosineSimilarity, self).__init__(neural_network, epoch, true, pred, name)
-
-    def _calculate(self, true: torch.Tensor, pred: torch.Tensor) -> float:
-        return torch.nn.CosineSimilarity(dim=0)(torch.flatten(true).T, torch.flatten(pred).T).item()  # noqa
-
-
-class SymmetricMeanAbsolutePersentageError(DatabaseMetricMixin):
-    _name = 'SymmetricMeanAbsolutePersentageError'
-
-    def __init__(self, neural_network: neuroAPI.neuralmodule.network.NeuralNetwork, epoch: int,
-                 true: torch.Tensor, pred: torch.Tensor, name: str = None):
-        super(SymmetricMeanAbsolutePersentageError, self).__init__(neural_network, epoch, true, pred, name)
-
-    def _calculate(self, true: torch.Tensor, pred: torch.Tensor) -> float:
-        return torch.nn.CosineSimilarity(dim=0)(torch.flatten(true).T, torch.flatten(pred).T).item()  # noqa
-
-
-class ConfusionMatrix(DatabaseMetricMixin):
-    _name = 'ConfusionMatrix'
-
-    def __init__(self, neural_network: neuroAPI.neuralmodule.network.NeuralNetwork, epoch: int,
-                 true: torch.Tensor, pred: torch.Tensor, name: str = None):
-        super(ConfusionMatrix, self).__init__(neural_network, epoch, true, pred, name)
-
-    def _calculate(self, true: torch.Tensor, pred: torch.Tensor) -> list[list[int]]:
-
-        return pd.crosstab(torch.argmax(true, dim=1), torch.argmax(pred, dim=1)).values.tolist()
+#
+# class CategoricalAccuracy(DatabaseMetricMixin):
+#     _name = 'CategoricalAccuracy'
+#
+#     def __init__(self, neural_network: neuroAPI.neuralmodule.network.NeuralNetwork, epoch: int,
+#                  true: torch.Tensor, pred: torch.Tensor, name: str = None):
+#         super(CategoricalAccuracy, self).__init__(neural_network, epoch, true, pred, name)
+#
+#     def _calculate(self, true: torch.Tensor, pred: torch.Tensor) -> float:
+#         return (sum(torch.argmax(pred, dim=1) == torch.argmax(true, dim=1)) / len(pred)).item()
+#

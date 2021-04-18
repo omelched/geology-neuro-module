@@ -33,6 +33,11 @@ class BorderPointType(enum.Enum):
     min = 2
 
 
+class MetricType(enum.Enum):
+    class_stat = 1
+    overall_stat = 2
+
+
 # TABLES
 # TODO: add back_populates
 
@@ -288,10 +293,14 @@ class Metric(Base):
                 comment='Metric id')
     name = Column(String(64),
                   nullable=False,
+                  unique=True,
                   comment='Metric name')
     description = Column(Text,
                          nullable=True,
                          comment='Metric description, e.g. formulae')
+    type = Column(Enum(MetricType),
+                  nullable=False,
+                  comment='Metric type')
 
 
 class NeuralModel(Base):
@@ -352,6 +361,9 @@ class NeuralModelMetrics(Base):
     epoch = Column(Integer,
                    primary_key=True,
                    comment='Current epoch')
+    rock_id = Column(ForeignKey('rocks.id'),
+                     nullable=True,
+                     comment='Rock id (if metric.type = class_stat))')
     value = Column(Text,
                    nullable=False,
                    comment='Metric value')
