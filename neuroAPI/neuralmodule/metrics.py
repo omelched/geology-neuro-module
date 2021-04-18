@@ -3,6 +3,7 @@ from uuid import uuid4, UUID
 from typing import Union
 
 import torch
+import pandas as pd
 
 import neuroAPI.database.models
 import neuroAPI.neuralmodule.network
@@ -55,7 +56,6 @@ _METRIC_ID_CACHE: dict[str, UUID] = {}  # to buffer metric.name -> metric.id map
 
 
 class DatabaseMetricMixin(BaseMetric, neuroAPI.database.models.NeuralModelMetrics, metaclass=abc.ABCMeta):
-    _metric_id = None
 
     def __init__(self, neural_network: neuroAPI.neuralmodule.network.NeuralNetwork, epoch: int,
                  session=None, *args, **kwargs):
@@ -96,7 +96,7 @@ class BinaryAccuracy(DatabaseMetricMixin):
                  true: torch.Tensor, pred: torch.Tensor, name: str = None):
         super(BinaryAccuracy, self).__init__(neural_network, epoch, true, pred, name)
 
-    def _calculate(self, true: torch.Tensor, pred: torch.Tensor):
+    def _calculate(self, true: torch.Tensor, pred: torch.Tensor) -> float:
         b_concat = torch.stack((torch.flatten(true), torch.flatten(pred))).T > 0.5
         return len(b_concat[b_concat[:, 0] == b_concat[:, 1]]) / len(b_concat)
 
@@ -108,7 +108,7 @@ class CategoricalCrossentopy(DatabaseMetricMixin):
                  true: torch.Tensor, pred: torch.Tensor, name: str = None):
         super(CategoricalCrossentopy, self).__init__(neural_network, epoch, true, pred, name)
 
-    def _calculate(self, true: torch.Tensor, pred: torch.Tensor):
+    def _calculate(self, true: torch.Tensor, pred: torch.Tensor) -> float:
         concat = torch.stack((torch.flatten(true), torch.flatten(pred))).T
         return (-concat[:, 1].clamp(min=0.000001, max=0.999999).log() * concat[:, 0]).mean().item()
 
@@ -120,7 +120,7 @@ class BinaryCrossentropy(DatabaseMetricMixin):
                  true: torch.Tensor, pred: torch.Tensor, name: str = None):
         super(BinaryCrossentropy, self).__init__(neural_network, epoch, true, pred, name)
 
-    def _calculate(self, true: torch.Tensor, pred: torch.Tensor):
+    def _calculate(self, true: torch.Tensor, pred: torch.Tensor) -> float:
         concat = torch.stack((torch.flatten(true), torch.clamp(torch.flatten(pred), min=0.000001, max=0.999999))).T
         return torch.mean(torch.Tensor([-1 * torch.log(row[1]) if row[0] == 1
                                         else -1 * torch.log(1 - row[1]) for row in concat])).item()
@@ -133,7 +133,7 @@ class MeanSquaredError(DatabaseMetricMixin):
                  true: torch.Tensor, pred: torch.Tensor, name: str = None):
         super(MeanSquaredError, self).__init__(neural_network, epoch, true, pred, name)
 
-    def _calculate(self, true: torch.Tensor, pred: torch.Tensor):
+    def _calculate(self, true: torch.Tensor, pred: torch.Tensor) -> float:
         concat = torch.stack((torch.flatten(true), torch.flatten(pred))).T
         return torch.div(torch.sum(torch.square(torch.subtract(concat[:, 0], concat[:, 1]))), len(concat)).item()
 
@@ -145,7 +145,7 @@ class Recall(DatabaseMetricMixin):
                  true: torch.Tensor, pred: torch.Tensor, name: str = None):
         super(Recall, self).__init__(neural_network, epoch, true, pred, name)
 
-    def _calculate(self, true: torch.Tensor, pred: torch.Tensor):
+    def _calculate(self, true: torch.Tensor, pred: torch.Tensor) -> float:
         b_concat = torch.stack((torch.flatten(true), torch.flatten(pred))).T > 0.5
         return len(b_concat[(b_concat[:, 0] == True) & (b_concat[:, 1] == True)]) / (
                 len((b_concat[(b_concat[:, 0] == True) & (b_concat[:, 1] == True)]))
@@ -159,7 +159,7 @@ class CosineSimilarity(DatabaseMetricMixin):
                  true: torch.Tensor, pred: torch.Tensor, name: str = None):
         super(CosineSimilarity, self).__init__(neural_network, epoch, true, pred, name)
 
-    def _calculate(self, true: torch.Tensor, pred: torch.Tensor):
+    def _calculate(self, true: torch.Tensor, pred: torch.Tensor) -> float:
         return torch.nn.CosineSimilarity(dim=0)(torch.flatten(true).T, torch.flatten(pred).T).item()  # noqa
 
 
@@ -170,7 +170,7 @@ class SymmetricMeanAbsolutePersentageError(DatabaseMetricMixin):
                  true: torch.Tensor, pred: torch.Tensor, name: str = None):
         super(SymmetricMeanAbsolutePersentageError, self).__init__(neural_network, epoch, true, pred, name)
 
-    def _calculate(self, true: torch.Tensor, pred: torch.Tensor):
+    def _calculate(self, true: torch.Tensor, pred: torch.Tensor) -> float:
         return torch.nn.CosineSimilarity(dim=0)(torch.flatten(true).T, torch.flatten(pred).T).item()  # noqa
 
 
@@ -181,5 +181,6 @@ class ConfusionMatrix(DatabaseMetricMixin):
                  true: torch.Tensor, pred: torch.Tensor, name: str = None):
         super(ConfusionMatrix, self).__init__(neural_network, epoch, true, pred, name)
 
-    def _calculate(self, true: torch.Tensor, pred: torch.Tensor):
-        return  # noqa
+    def _calculate(self, true: torch.Tensor, pred: torch.Tensor) -> list:
+
+        return pd.crosstab(torch.argmax(true, dim=1), torch.argmax(pred, dim=1)).values.tolist()
