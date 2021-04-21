@@ -92,9 +92,9 @@ class Deposit(Base):
     id = Column(GUID,
                 primary_key=True, default=uuid.uuid4,
                 comment='Deposit id')
-    username = Column(String(64),
-                      nullable=False,
-                      comment='Deposit name')
+    name = Column(String(64),
+                  nullable=False,
+                  comment='Deposit name')
 
 
 class DepositOwners(Base):
@@ -299,8 +299,8 @@ class Metric(Base):
                          nullable=True,
                          comment='Metric description, e.g. formulae')
     mtype = Column(Enum(MetricType), name='type',
-                  nullable=False,
-                  comment='Metric type')
+                   nullable=False,
+                   comment='Metric type')
 
 
 class NeuralModel(Base):
