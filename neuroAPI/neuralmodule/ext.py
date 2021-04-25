@@ -31,8 +31,8 @@ class NeuralNetwork(NeuralModel, _NeuralNetwork):
         except ValueError:
             raise ValueError('`max_epochs` is not int-able')
 
-        NeuralModel.__init__(self)
-        _NeuralNetwork.__init__(self, output_count)
+        NeuralModel.__init__(self)  # TODO: research about super() and refactor 4 flexibility
+        _NeuralNetwork.__init__(self, output_count)  # +
 
         self.deposit_id = deposit.id
         self.block_size = block_size
