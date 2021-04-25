@@ -1,9 +1,10 @@
 import uuid
 import enum
 from datetime import datetime
+from typing import Union
 
 from sqlalchemy import Column, String, Numeric, ForeignKey, Integer, CheckConstraint, UniqueConstraint, Text, \
-    LargeBinary, Index, DateTime, select
+    LargeBinary, Index, DateTime, select, and_
 from sqlalchemy.orm import declarative_base, Session
 from sqlalchemy.types import CHAR, Enum
 from sqlalchemy_utils import force_instant_defaults
@@ -324,12 +325,9 @@ class NeuralModel(Base):
     cross_validation_id = Column(ForeignKey('cross_validations.id'),
                                  nullable=True,
                                  comment='Cross-validation grouping entity id')
-    structure = Column(LargeBinary,
-                       nullable=False,
-                       comment='NM structure')
-    weights = Column(LargeBinary,
-                     nullable=False,
-                     comment='NM weights')
+    dump = Column(LargeBinary,
+                  nullable=False,
+                  comment='NM dump')
 
 
 class NeuralModelExcludedWells(Base):
@@ -369,7 +367,7 @@ class NeuralModelMetrics(Base):
                    comment='Metric value')
 
     @staticmethod
-    def get_create_metric(name: str, mtype: MetricType, session: Session = None) -> uuid.UUID:
+    def _get_create_metric(name: str, mtype: MetricType, session: Session = None) -> uuid.UUID:
         standalone = False
 
         if not session:
@@ -396,6 +394,30 @@ class NeuralModelMetrics(Base):
                 session.commit()
 
         return metric.id
+
+    @staticmethod
+    def _get_rock_id( index: int, deposit_id: uuid.UUID, session: Session = None) -> Union[uuid.UUID, None]:
+        try:
+            index = int(index)
+        except TypeError:
+            raise TypeError('`index` is not int-able')
+        standalone = False
+
+        if not session:
+            session = database_handler.get_session()
+            standalone = True
+
+        result = session.execute(select(Rock)
+                                 .where(and_(Rock.index == index,
+                                             Rock.deposit_id == deposit_id)))
+
+        if result:
+            idx = result.fetchone()[0].id
+            if standalone:
+                session.rollback()
+            return idx
+
+        return None
 
 
 class PredictedBlock(Base):

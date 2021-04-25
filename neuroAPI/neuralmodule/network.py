@@ -1,5 +1,6 @@
 from torch import nn, optim
 from torch.utils.data import DataLoader
+from pycm import ConfusionMatrix
 
 from neuroAPI.neuralmodule.dataset import GeologyDataset
 
@@ -17,7 +18,8 @@ class NeuralNetwork(nn.Module):
             nn.ReLU(),
             nn.Linear(64, 32),
             nn.Tanh(),
-            nn.Linear(32, output_count)
+            nn.Linear(32, output_count),
+            nn.Softmax()  # TODO: evaluate and resolve warning
         )
 
     def forward(self, x):
@@ -39,6 +41,9 @@ class TrainingSession(object):
         }
         self.loss_fn = nn.CrossEntropyLoss()
         self.optimizer = optim.Adadelta(self.model.parameters(), lr=learning_rate)
+
+    def calculate_metrics(self, true, pred):
+        _pred = pred.argmax(dim=1)
 
     def train_loop(self):
         size = len(self.dataloader.dataset)  # noqa
