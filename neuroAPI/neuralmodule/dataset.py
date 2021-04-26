@@ -3,11 +3,12 @@ from typing import Union
 import pandas as pd
 import numpy as np
 from torch.utils.data import Dataset
+from torch import Tensor
 
 from neuroAPI.database.models import BorderPointType as _BPType
 
 
-class GeologyDataset(Dataset):
+class GeologyDataset(Dataset):  # TODO: refactor — do not use DataLoader
     def __init__(self, file_path: str = None, borders: dict[str, dict[_BPType, float]] = None):
         if not file_path:
             raise NotImplementedError
@@ -36,6 +37,7 @@ class GeologyDataset(Dataset):
         self.data['X_1'] = self.raw_data['center.x']
         self.data['X_2'] = self.raw_data['center.y']
         self.data['X_3'] = self.raw_data['center.x']
+        self.data['_X'] = self.raw_data[['center.x', 'center.y', 'center.z']].values.tolist()
         self.data['Y'] = self.raw_data['code.index']
 
         self.normalize(borders=borders)
@@ -45,7 +47,7 @@ class GeologyDataset(Dataset):
 
     def __getitem__(self, idx):
         row = self.data.iloc[idx, :]
-        return {'X': np.array([row['X_1'], row['X_2'], row['X_3']]).astype(np.float32),
+        return {'X': Tensor(row['_X']),
                 'Y': int(row['Y'])}
 
     def normalize(self, borders: Union[None, dict[str, dict[_BPType, float]]]):
@@ -53,3 +55,5 @@ class GeologyDataset(Dataset):
             gen = (col for col in self.data.columns if col.startswith('X'))
             for col in gen:
                 self.data[col] = (self.data[col] - self.data[col].min()) / (self.data[col].max() - self.data[col].min())
+        else:
+            raise NotImplementedError
