@@ -152,9 +152,13 @@ class DepositFiles(Base):
 
 class Rock(Base):
     __tablename__ = 'rocks'
-    __table_args__ = {
-        'comment': "Store rock data."
-    }
+    __table_args__ = (
+        UniqueConstraint('deposit_id', 'index'),
+        UniqueConstraint('deposit_id', 'name'),
+        {
+            'comment': "Store rock data."
+        }
+    )
 
     id = Column(GUID,
                 primary_key=True, default=uuid.uuid4,
