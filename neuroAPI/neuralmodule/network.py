@@ -1,6 +1,7 @@
 from torch import nn, optim, Tensor
 from torch.utils.data import DataLoader
 from pycm import ConfusionMatrix
+import numpy as np
 
 from neuroAPI.neuralmodule.dataset import GeologyDataset
 from neuroAPI.database.models import MetricType
@@ -73,7 +74,15 @@ class TrainingSession(object):
 
     def _after_epoch(self, epoch: int):
         df = self.dataloader.dataset.data  # noqa
-        cm = ConfusionMatrix(df['Y'].to_numpy(), self.model(Tensor(df['X'])).argmax(dim=1).numpy())
+        cm = ConfusionMatrix(df['Y'].to_numpy(),
+                             self.model(
+                                 Tensor(
+                                     np.array(
+                                         df[[col  # FIXME: unreadable shit
+                                             for col
+                                             in df.columns
+                                             if col.startswith('X_')
+                                             ]]))).argmax(dim=1).numpy())
         metrics = [PYCMMetric(name=m,
                               metric_type=MetricType.overall_stat,
                               value=v,

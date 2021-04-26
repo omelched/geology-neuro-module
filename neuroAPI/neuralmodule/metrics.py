@@ -8,15 +8,15 @@ class Metric(object):
     _name: str
 
     def __init__(self, name: str, value: Union[float, int, str] = None, objects: tuple[Tensor, Tensor] = None):
-        if bool(value) == bool(objects):
-            if not value:
-                raise ValueError('Neither `value` nor `objects` passed')
-            else:
-                raise ValueError('`value` and `objects` passed simultaneously')
+        # if bool(value) == bool(objects):  # TODO: check that only `value` or only `object` is passed
+        #     if value is None:
+        #         raise ValueError('Neither `value` nor `objects` passed')
+        #     else:
+        #         raise ValueError('`value` and `objects` passed simultaneously')
         assert type(name) == str, TypeError('`name` is not string')
 
         self._name = name
-        if not value:
+        if objects:
             self._value = self.calculate(objects)
         else:
             self._value = value
@@ -25,8 +25,8 @@ class Metric(object):
 
         assert objects, ValueError('No `objects` passed')
         assert len(objects) == 2, ValueError(f'{len(objects)} items in `objects` passed. 2 items expected')
-        assert type(objects[0]) == Tensor, TypeError(f'f{type(objects[0])} passed. torch.Tensor expected')
-        assert type(objects[1]) == Tensor, TypeError(f'f{type(objects[1])} passed. torch.Tensor expected')
+        assert type(objects[0]) == Tensor, TypeError(f'{type(objects[0])} passed. torch.Tensor expected')
+        assert type(objects[1]) == Tensor, TypeError(f'{type(objects[1])} passed. torch.Tensor expected')
         assert objects[0].size()[0] == objects[1].size()[0], ValueError('Tensors length dont match.'
                                                                         f'{objects[0].size()[0]} !='
                                                                         f'{objects[1].size()[0]}')
