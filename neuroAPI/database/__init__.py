@@ -25,7 +25,8 @@ class DatabaseHandler(object):
                                                              _config.get("DATABASE", "DB_USER"),
                                                              _config.get("DATABASE", "DB_PASS"),
                                                              _config.get("DATABASE", "DB_HOST"),
-                                                             _config.get("DATABASE", "DB_NAME")))
+                                                             _config.get("DATABASE", "DB_NAME")),
+                                   connect_args={"application_name": "geology-neuro-module"})
         else:
             raise NotImplemented
 
@@ -34,7 +35,7 @@ class DatabaseHandler(object):
 
     def get_session(self) -> sqlalchemy.orm.Session:
 
-        return sqlalchemy.orm.Session(self.engine)
+        return sqlalchemy.orm.Session(self.engine, future=True)
 
 
 database_handler = DatabaseHandler()
