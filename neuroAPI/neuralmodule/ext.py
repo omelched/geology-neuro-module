@@ -50,7 +50,7 @@ class NeuralNetwork(NeuralModel, _NeuralNetwork):
 class PYCMMetric(NeuralModelMetrics, Metric):
 
     def __init__(self, name: str, metric_type: MetricType, value: Union[float, int, str], epoch: int,
-                 neural_model: NeuralNetwork, rock_index: int):
+                 neural_model: NeuralNetwork, rock_index: int = None):
 
         assert type(metric_type) == MetricType, TypeError('`metric_type` is not from `MetricType` enum')
         assert type(value) in [float, int, str], TypeError(f'type(`value`) == {type(value)}. '
@@ -67,7 +67,8 @@ class PYCMMetric(NeuralModelMetrics, Metric):
             self.epoch = int(epoch)
         except ValueError:
             raise ValueError('`epoch` is not int-able')
-        self.rock_id = self.__get_rock_id(rock_index, neural_model)
+        if not rock_index:
+            self.rock_id = self.__get_rock_id(rock_index, neural_model)
         self.value = self._value
 
     def __get_metric_id(self, metric_type: MetricType) -> UUID:
