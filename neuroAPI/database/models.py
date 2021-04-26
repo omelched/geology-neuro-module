@@ -375,13 +375,18 @@ class NeuralModelMetrics(Base):
         standalone = False
 
         if not session:
-            session = database_handler.get_session()
-            standalone = True
+            session = database_handler.active_session
+
+        if not session:
+            raise NotImplementedError  # TODO: Implement
+            # session_context_generator = database_handler.get_session()
+            # standalone = True
 
         result = session.execute(select(Metric).where(Metric.name == name))
+        row = result.first()
 
-        if result:
-            idx = result.fetchone()[0].id
+        if row is not None:
+            idx = row[0].id
             if standalone:
                 session.rollback()
             return idx
@@ -400,7 +405,7 @@ class NeuralModelMetrics(Base):
         return metric.id
 
     @staticmethod
-    def _get_rock_id( index: int, deposit_id: uuid.UUID, session: Session = None) -> Union[uuid.UUID, None]:
+    def _get_rock_id(index: int, deposit_id: uuid.UUID, session: Session = None) -> Union[uuid.UUID, None]:
         try:
             index = int(index)
         except TypeError:
@@ -414,9 +419,10 @@ class NeuralModelMetrics(Base):
         result = session.execute(select(Rock)
                                  .where(and_(Rock.index == index,
                                              Rock.deposit_id == deposit_id)))
+        row = result.first()
 
-        if result:
-            idx = result.fetchone()[0].id
+        if row is not None:
+            idx = row[0].id
             if standalone:
                 session.rollback()
             return idx

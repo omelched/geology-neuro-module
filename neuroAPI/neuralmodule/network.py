@@ -3,8 +3,8 @@ from torch.utils.data import DataLoader
 from pycm import ConfusionMatrix
 
 from neuroAPI.neuralmodule.dataset import GeologyDataset
-from neuroAPI.neuralmodule.ext import PYCMMetric, _NeuralNetwork
 from neuroAPI.database.models import MetricType
+from neuroAPI.database import database_handler
 
 
 class NeuralNetwork(nn.Module):
@@ -27,6 +27,12 @@ class NeuralNetwork(nn.Module):
     def forward(self, x):
         logits = self.linear_stack(x)
         return logits
+
+
+# TODO: split into 2 parents and child classes
+
+from neuroAPI.neuralmodule.ext import PYCMMetric  # noqa
+from neuroAPI.neuralmodule.ext import NeuralNetwork as _NeuralNetwork  # noqa
 
 
 class TrainingSession(object):
@@ -57,24 +63,25 @@ class TrainingSession(object):
     def train(self):
         self._before_training()
         for epoch in range(self.training_params['epochs']):
-            self._before_epoch(epoch)
+            self._before_epoch(epoch + 1)
             self.train_loop()
-            self._after_epoch(epoch)
+            self._after_epoch(epoch + 1)
         self._after_training()
 
     def _before_epoch(self, epoch: int):
         pass
 
     def _after_epoch(self, epoch: int):
-        df = self.dataloader.dataset.get_all()  # noqa
-        # TODO: refactor with Dataset.get_all()
+        df = self.dataloader.dataset.data  # noqa
         cm = ConfusionMatrix(df['Y'].to_numpy(), self.model(Tensor(df['X'])).argmax(dim=1).numpy())
         metrics = [PYCMMetric(name=m,
                               metric_type=MetricType.overall_stat,
                               value=v,
                               epoch=epoch,
                               neural_model=self.model)
-                   for m, v in cm.overall_stat.items() if type(v) in(int, str, float)]  # noqa
+                   for m, v in cm.overall_stat.items() if type(v) in (int, str, float)]  # noqa
+        session = database_handler.active_session  # TODO: refactor to generator
+        session.add_all(metrics)
 
         pass
 
@@ -82,4 +89,6 @@ class TrainingSession(object):
         pass
 
     def _after_training(self):
-        pass
+        self.model.save()
+        session = database_handler.active_session  # TODO: refactor to generator
+        session.add(self.model)

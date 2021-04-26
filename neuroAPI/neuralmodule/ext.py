@@ -16,7 +16,8 @@ _ROCK_ID_BUFFER: dict[UUID, dict[int, UUID]] = {}
 
 class NeuralNetwork(NeuralModel, _NeuralNetwork):
     def __init__(self, output_count: int, deposit: Deposit, block_size: float, max_epochs: int,
-                 cross_validation: CrossValidation = None):
+                 cross_validation: CrossValidation = None, *args, **kwargs):
+
         assert type(deposit) == Deposit, TypeError(f'type(`deposit`) == {type(deposit)}. '
                                                    'Expected neuroAPI.database.models.Deposit')
         assert not cross_validation or type(cross_validation) == CrossValidation, \
@@ -31,13 +32,14 @@ class NeuralNetwork(NeuralModel, _NeuralNetwork):
         except ValueError:
             raise ValueError('`max_epochs` is not int-able')
 
-        NeuralModel.__init__(self)  # TODO: research about super() and refactor 4 flexibility
+        NeuralModel.__init__(self, *args, **kwargs)  # TODO: research about super() and refactor 4 flexibility
         _NeuralNetwork.__init__(self, output_count)  # +
 
         self.deposit_id = deposit.id
         self.block_size = block_size
         self.max_epochs = max_epochs
-        self.cross_validation_id = cross_validation.id
+        if cross_validation:
+            self.cross_validation_id = cross_validation.id
 
     def save(self):
         buff = io.BytesIO()
@@ -50,16 +52,18 @@ class NeuralNetwork(NeuralModel, _NeuralNetwork):
 class PYCMMetric(NeuralModelMetrics, Metric):
 
     def __init__(self, name: str, metric_type: MetricType, value: Union[float, int, str], epoch: int,
-                 neural_model: NeuralNetwork, rock_index: int = None):
+                 neural_model: NeuralNetwork, rock_index: int = None, *args, **kwargs):
 
         assert type(metric_type) == MetricType, TypeError('`metric_type` is not from `MetricType` enum')
         assert type(value) in [float, int, str], TypeError(f'type(`value`) == {type(value)}. '
                                                            'Expected Union[float, int, str]')
-        assert type(neural_model) == _NeuralNetwork, TypeError(f'type(`neural_model`) == {type(neural_model)}. '
-                                                               'Expected neuroAPI.neuralmodule.ext.NeuralNetwork')
+        assert type(neural_model) == NeuralNetwork, TypeError(f'type(`neural_model`) == {type(neural_model)}. '
+                                                              'Expected neuroAPI.neuralmodule.ext.NeuralNetwork')
 
-        NeuralModelMetrics.__init__(self)  # TODO: research about super() and refactor 4 flexibility
+        NeuralModelMetrics.__init__(self, *args, **kwargs)  # TODO: research about super() and refactor 4 flexibility
         Metric.__init__(self, name=name, value=value)  # +
+
+        self.name = name
 
         self.neural_model_id = neural_model.id
         self.metric_id = self.__get_metric_id(metric_type)
@@ -67,7 +71,7 @@ class PYCMMetric(NeuralModelMetrics, Metric):
             self.epoch = int(epoch)
         except ValueError:
             raise ValueError('`epoch` is not int-able')
-        if not rock_index:
+        if rock_index:
             self.rock_id = self.__get_rock_id(rock_index, neural_model)
         self.value = self._value
 
