@@ -5,21 +5,20 @@ from datetime import datetime
 import numpy as np
 from pycm import ConfusionMatrix
 from torch import nn, optim, Tensor
-from torch.utils.data import DataLoader
 
 from neuroAPI.database import database_handler
 from neuroAPI.database.models import MetricType
-from neuroAPI.neuralmodule.dataset import GeologyDataset
+from neuroAPI.neuralmodule.dataset import FastDataLoader
 from neuroAPI.neuralmodule.ext import NeuralNetwork as _NeuralNetwork  # noqa
 from neuroAPI.neuralmodule.ext import PYCMMetric  # noqa
 
 
 class TrainingSession(object):
-    def __init__(self, dataset: GeologyDataset, model: _NeuralNetwork,
-                 learning_rate: float = 1e-3, batch_size: int = 64, epochs: int = 5):
-        if not dataset or not model:
+    def __init__(self, dataloader: FastDataLoader, model: _NeuralNetwork,
+                 learning_rate: float = 1e-2, batch_size: int = 64, epochs: int = 5):
+        if not dataloader or not model:
             raise ValueError  # TODO: elaborate
-        self.dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+        self.dataloader = dataloader
         self.model = model
         self.training_params = {
             'lr': learning_rate,
@@ -30,10 +29,9 @@ class TrainingSession(object):
         self.optimizer = optim.Adadelta(self.model.parameters(), lr=learning_rate)
 
     def train_loop(self):
-        size = len(self.dataloader.dataset)  # noqa
         for i, batch in enumerate(self.dataloader):
-            pred = self.model(batch['X'])
-            loss = self.loss_fn(pred, batch['Y'])
+            pred = self.model(batch[0])
+            loss = self.loss_fn(pred, batch[1])
 
             self.optimizer.zero_grad()
             loss.backward()
@@ -52,16 +50,8 @@ class TrainingSession(object):
         pass
 
     def _after_epoch(self, epoch: int):
-        df = self.dataloader.dataset.data  # noqa
-        cm = ConfusionMatrix(df['Y'].to_numpy(),
-                             self.model(
-                                 Tensor(
-                                     np.array(
-                                         df[[col  # FIXME: unreadable shit
-                                             for col
-                                             in df.columns
-                                             if col.startswith('X_')
-                                             ]]))).argmax(dim=1).numpy())
+        cm = ConfusionMatrix(self.dataloader.tensors[1].numpy(),
+                             self.model(self.dataloader.tensors[0]).argmax(dim=1).numpy())
         metrics = [PYCMMetric(name=m,
                               metric_type=MetricType.overall_stat,
                               value=v,

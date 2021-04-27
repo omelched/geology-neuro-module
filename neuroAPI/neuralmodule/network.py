@@ -1,13 +1,4 @@
-from datetime import datetime
-
-from torch import nn, optim, Tensor
-from torch.utils.data import DataLoader
-from pycm import ConfusionMatrix
-import numpy as np
-
-from neuroAPI.neuralmodule.dataset import GeologyDataset
-from neuroAPI.database.models import MetricType
-from neuroAPI.database import database_handler
+from torch import nn
 
 
 class NeuralNetwork(nn.Module):
