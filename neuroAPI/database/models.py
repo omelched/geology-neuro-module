@@ -1,15 +1,19 @@
 import uuid
 import enum
 from datetime import datetime
+from typing import Union
 
 from sqlalchemy import Column, String, Numeric, ForeignKey, Integer, CheckConstraint, UniqueConstraint, Text, \
-    LargeBinary, Index, DateTime
-from sqlalchemy.orm import declarative_base
+    LargeBinary, Index, DateTime, select, and_
+from sqlalchemy.orm import declarative_base, Session
 from sqlalchemy.types import CHAR, Enum
+from sqlalchemy_utils import force_instant_defaults
 
 from neuroAPI.database.ext import GUID
+from neuroAPI.database import database_handler
 
 Base = declarative_base()
+force_instant_defaults()
 
 
 # ENUMS
@@ -28,6 +32,12 @@ class ContactInformationType(enum.Enum):
 class BorderPointType(enum.Enum):
     max = 1
     min = 2
+
+
+class MetricType(enum.Enum):
+    class_stat = 1
+    overall_stat = 2
+
 
 # TABLES
 # TODO: add back_populates
@@ -83,9 +93,9 @@ class Deposit(Base):
     id = Column(GUID,
                 primary_key=True, default=uuid.uuid4,
                 comment='Deposit id')
-    username = Column(String(64),
-                      nullable=False,
-                      comment='Deposit name')
+    name = Column(String(64),
+                  nullable=False,
+                  comment='Deposit name')
 
 
 class DepositOwners(Base):
@@ -142,9 +152,13 @@ class DepositFiles(Base):
 
 class Rock(Base):
     __tablename__ = 'rocks'
-    __table_args__ = {
-        'comment': "Store rock data."
-    }
+    __table_args__ = (
+        UniqueConstraint('deposit_id', 'index'),
+        UniqueConstraint('deposit_id', 'name'),
+        {
+            'comment': "Store rock data."
+        }
+    )
 
     id = Column(GUID,
                 primary_key=True, default=uuid.uuid4,
@@ -273,7 +287,7 @@ class CrossValidation(Base):
                   comment='Cross-validation name')
 
 
-class Metrics(Base):
+class Metric(Base):
     __tablename__ = 'metrics'
     __table_args__ = {
         'comment': "Stores metrics."
@@ -284,10 +298,14 @@ class Metrics(Base):
                 comment='Metric id')
     name = Column(String(64),
                   nullable=False,
+                  unique=True,
                   comment='Metric name')
     description = Column(Text,
                          nullable=True,
                          comment='Metric description, e.g. formulae')
+    mtype = Column(Enum(MetricType), name='type',
+                   nullable=False,
+                   comment='Metric type')
 
 
 class NeuralModel(Base):
@@ -311,12 +329,9 @@ class NeuralModel(Base):
     cross_validation_id = Column(ForeignKey('cross_validations.id'),
                                  nullable=True,
                                  comment='Cross-validation grouping entity id')
-    structure = Column(LargeBinary,
-                       nullable=False,
-                       comment='NM structure')
-    weights = Column(LargeBinary,
-                     nullable=False,
-                     comment='NM weights')
+    dump = Column(LargeBinary,
+                  nullable=False,
+                  comment='NM dump')
 
 
 class NeuralModelExcludedWells(Base):
@@ -348,9 +363,71 @@ class NeuralModelMetrics(Base):
     epoch = Column(Integer,
                    primary_key=True,
                    comment='Current epoch')
-    value = Column(Numeric,
+    rock_id = Column(ForeignKey('rocks.id'),
+                     nullable=True,
+                     comment='Rock id (if metric.type = class_stat))')
+    value = Column(Text,
                    nullable=False,
                    comment='Metric value')
+
+    @staticmethod
+    def _get_create_metric(name: str, mtype: MetricType, session: Session = None) -> uuid.UUID:
+        standalone = False
+
+        if not session:
+            session = database_handler.active_session
+
+        if not session:
+            raise NotImplementedError  # TODO: Implement
+            # session_context_generator = database_handler.get_session()
+            # standalone = True
+
+        result = session.execute(select(Metric).where(Metric.name == name))
+        row = result.first()
+
+        if row is not None:
+            idx = row[0].id
+            if standalone:
+                session.rollback()
+            return idx
+
+        metric = Metric(name=name, mtype=mtype)
+
+        try:
+            session.add(metric)
+        except Exception as e:  # TODO: custom exeptions with sys.exc_info()[0]
+            session.rollback()
+            raise e
+        else:
+            if standalone:
+                session.commit()
+
+        return metric.id
+
+    @staticmethod
+    def _get_rock_id(index: int, deposit_id: uuid.UUID, session: Session = None) -> Union[uuid.UUID, None]:
+        try:
+            index = int(index)
+        except TypeError:
+            raise TypeError('`index` is not int-able')
+        standalone = False
+
+        if not session:
+            session = database_handler.get_session()
+            standalone = True
+
+        result = session.execute(select(Rock)
+                                 .where(and_(Rock.index == index,
+                                             Rock.deposit_id == deposit_id)))
+        row = result.first()
+
+        if row is not None:
+            idx = row[0].id
+            if standalone:
+                session.rollback()
+            return idx
+
+        return None
 
 
 class PredictedBlock(Base):
@@ -448,4 +525,3 @@ class File(Base):
     content = Column(LargeBinary,
                      nullable=False,
                      comment='File itself in binary')
-
