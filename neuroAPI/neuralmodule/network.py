@@ -14,8 +14,7 @@ class NeuralNetwork(nn.Module):
             nn.ReLU(),
             nn.Linear(64, 32),
             nn.Tanh(),
-            nn.Linear(32, output_count),
-            nn.Softmax(dim=1)  # TODO: evaluate and resolve warning
+            nn.Linear(32, output_count)
         )
 
     def forward(self, x):

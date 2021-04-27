@@ -15,7 +15,7 @@ from neuroAPI.neuralmodule.ext import PYCMMetric  # noqa
 
 class TrainingSession(object):
     def __init__(self, dataloader: FastDataLoader, model: _NeuralNetwork,
-                 learning_rate: float = 1e-2, batch_size: int = 64, epochs: int = 5):
+                 learning_rate: float = 1e-3, batch_size: int = 64, epochs: int = 5):
         if not dataloader or not model:
             raise ValueError  # TODO: elaborate
         self.dataloader = dataloader
@@ -26,7 +26,7 @@ class TrainingSession(object):
             'epochs': epochs
         }
         self.loss_fn = nn.CrossEntropyLoss()
-        self.optimizer = optim.Adadelta(self.model.parameters(), lr=learning_rate)
+        self.optimizer = optim.Adam(self.model.parameters(), lr=learning_rate)
 
     def train_loop(self):
         for i, batch in enumerate(self.dataloader):
@@ -50,8 +50,9 @@ class TrainingSession(object):
         pass
 
     def _after_epoch(self, epoch: int):
+        m = nn.Softmax(dim=1)
         cm = ConfusionMatrix(self.dataloader.tensors[1].numpy(),
-                             self.model(self.dataloader.tensors[0]).argmax(dim=1).numpy())
+                             m(self.model(self.dataloader.tensors[0])).argmax(dim=1).numpy())
         metrics = [PYCMMetric(name=m,
                               metric_type=MetricType.overall_stat,
                               value=v,
