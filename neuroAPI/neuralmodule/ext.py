@@ -10,7 +10,7 @@ from neuroAPI.database.models import NeuralModelMetrics, MetricType, NeuralModel
 from neuroAPI.neuralmodule.metrics import Metric
 from neuroAPI.neuralmodule.network import NeuralNetwork as _NeuralNetwork
 
-_METRIC_ID_BUFFER: dict[str, UUID] = {}
+_METRIC_ID_BUFFER: dict[str, UUID] = {}  # TODO: buffers to database module?
 _ROCK_ID_BUFFER: dict[UUID, dict[int, UUID]] = {}
 
 
@@ -40,6 +40,8 @@ class NeuralNetwork(NeuralModel, _NeuralNetwork):
         self.max_epochs = max_epochs
         if cross_validation:
             self.cross_validation_id = cross_validation.id
+
+        self.deposit = deposit
 
     def save(self):
         buff = io.BytesIO()
@@ -75,7 +77,7 @@ class PYCMMetric(NeuralModelMetrics, Metric):
             self.rock_id = self.__get_rock_id(rock_index, neural_model)
         self.value = self._value
 
-    def __get_metric_id(self, metric_type: MetricType) -> UUID:
+    def __get_metric_id(self, metric_type: MetricType) -> UUID:  # TODO: buffers to database module
         try:
             return _METRIC_ID_BUFFER[self.name]
         except KeyError:

@@ -176,6 +176,55 @@ class Rock(Base):
                    nullable=True,
                    comment='Rock hex color, e.g. "#FFFFFF"')
 
+    @classmethod
+    def get_rock_id(cls, index: int, deposit_id: uuid.UUID, session: Session = None) -> Union[uuid.UUID, None]:
+        try:
+            index = int(index)
+        except TypeError:
+            raise TypeError('`index` is not int-able')
+        standalone = False
+
+        if not session:
+            if not database_handler.active_session:
+                session = database_handler.get_session()
+                standalone = True
+            session = database_handler.active_session
+
+        result = session.execute(select(Rock)
+                                 .where(and_(Rock.index == index,
+                                             Rock.deposit_id == deposit_id)))
+        row = result.first()
+
+        if row is not None:
+            idx = row[0].id
+            if standalone:
+                session.rollback()
+            return idx
+
+        return None
+
+    @classmethod
+    def get_rocks_in_deposit(cls, deposit: Deposit, session: Session = None) -> Union[list, None]:
+        assert isinstance(deposit, Deposit), TypeError(f'{type(deposit)} passed. Deposit expected')
+
+        standalone = False
+
+        if not session:
+            if database_handler.active_session:
+                session = database_handler.active_session
+            else:
+                session = database_handler.get_session()
+                standalone = True
+
+        result = session.execute(select(Rock)
+                                 .where(Rock.deposit_id == deposit.id))
+        rows = result.all()
+
+        if rows is not None:
+            return rows
+
+        return None
+
 
 class Well(Base):
     __tablename__ = 'wells'
@@ -406,28 +455,7 @@ class NeuralModelMetrics(Base):
 
     @staticmethod
     def _get_rock_id(index: int, deposit_id: uuid.UUID, session: Session = None) -> Union[uuid.UUID, None]:
-        try:
-            index = int(index)
-        except TypeError:
-            raise TypeError('`index` is not int-able')
-        standalone = False
-
-        if not session:
-            session = database_handler.get_session()
-            standalone = True
-
-        result = session.execute(select(Rock)
-                                 .where(and_(Rock.index == index,
-                                             Rock.deposit_id == deposit_id)))
-        row = result.first()
-
-        if row is not None:
-            idx = row[0].id
-            if standalone:
-                session.rollback()
-            return idx
-
-        return None
+        return Rock.get_rock_id(index, deposit_id, session)
 
 
 class PredictedBlock(Base):

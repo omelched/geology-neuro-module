@@ -2,12 +2,12 @@
 # TODO: split into 2 parents and child classes
 from datetime import datetime
 
-import numpy as np
+import pandas as pd
 from pycm import ConfusionMatrix
-from torch import nn, optim, Tensor
+from torch import nn, optim
 
 from neuroAPI.database import database_handler
-from neuroAPI.database.models import MetricType
+from neuroAPI.database.models import MetricType, PredictedBlock, Rock
 from neuroAPI.neuralmodule.dataset import FastDataLoader
 from neuroAPI.neuralmodule.ext import NeuralNetwork as _NeuralNetwork  # noqa
 from neuroAPI.neuralmodule.ext import PYCMMetric  # noqa
@@ -50,7 +50,7 @@ class TrainingSession(object):
         pass
 
     def _after_epoch(self, epoch: int):
-        m = nn.Softmax(dim=1)
+        m = nn.Softmax(dim=1)  # TODO: refactor as method
         cm = ConfusionMatrix(self.dataloader.tensors[1].numpy(),
                              m(self.model(self.dataloader.tensors[0])).argmax(dim=1).numpy())
         metrics = [PYCMMetric(name=m,
@@ -74,5 +74,18 @@ class TrainingSession(object):
         self.model.save()
         session = database_handler.active_session  # TODO: refactor to generator
         session.add(self.model)
+        m = nn.Softmax(dim=1)  # TODO: refactor as method
+        pred = m(self.model(self.dataloader.tensors[0])).argmax(dim=1)  # TODO: refactor as neural network method
+        rocks = Rock.get_rocks_in_deposit(self.model.deposit)
+        index_id_rocks_dict = {rock[0].index: rock[0].id for rock in rocks}
+
+        coords = pd.DataFrame(self.dataloader.tensors[0].numpy())
+        coords = self.dataloader.denormalize(coords)
+        predicted_blocks = [PredictedBlock(neural_model_id=self.model.id,
+                                           center_x=round(coords.iloc[i, 0].item(), 3),
+                                           center_y=round(coords.iloc[i, 1].item(), 3),
+                                           center_z=round(coords.iloc[i, 2].item(), 3),
+                                           content=index_id_rocks_dict[pred[i].item()]) for i in range(len(pred))]
+        session.add_all(predicted_blocks)
         print(f'end training — {datetime.now()}')
 
