@@ -88,4 +88,3 @@ class TrainingSession(object):
                                            content=index_id_rocks_dict[pred[i].item()]) for i in range(len(pred))]
         session.add_all(predicted_blocks)
         print(f'end training — {datetime.now()}')
-
