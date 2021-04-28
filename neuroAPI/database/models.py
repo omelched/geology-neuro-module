@@ -178,17 +178,29 @@ class Rock(Base):
 
     @classmethod
     def get_rock_id(cls, index: int, deposit_id: uuid.UUID, session: Session = None) -> Union[uuid.UUID, None]:
+        """
+        Returns Rock.id from db based on rock.index and Rock.deposit_id.
+        
+        :param  index: Rock.index
+        :type   index: int
+        :param  deposit_id: Deposit.id
+        :type   deposit_id: uuid.UUID
+        :param  session: SQLAlchemy session. If not specified — will be taken from database_handler or created
+        :type   session: sqlalchemy.orm.Session
+
+        :return:    Rock.id or None if not found
+        :rtype:     Union[uuid.UUID, None]
+        """
         try:
             index = int(index)
         except TypeError:
             raise TypeError('`index` is not int-able')
-        standalone = False
 
         if not session:
             if not database_handler.active_session:
-                session = database_handler.get_session()
-                standalone = True
-            session = database_handler.active_session
+                raise NotImplementedError
+            else:
+                session = database_handler.active_session
 
         result = session.execute(select(Rock)
                                  .where(and_(Rock.index == index,
@@ -197,8 +209,6 @@ class Rock(Base):
 
         if row is not None:
             idx = row[0].id
-            if standalone:
-                session.rollback()
             return idx
 
         return None

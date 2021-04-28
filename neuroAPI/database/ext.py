@@ -1,5 +1,3 @@
-from abc import ABC
-
 from sqlalchemy.types import TypeDecorator, CHAR
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
