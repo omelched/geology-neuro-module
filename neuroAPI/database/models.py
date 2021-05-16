@@ -96,9 +96,9 @@ class Deposit(Base):
     name = Column(String(64),
                   nullable=False,
                   comment='Deposit name')
-    offset = Column(Numeric,
-                    nullable=False,
-                    comment='Deposit offset')
+    bias = Column(Numeric,
+                  nullable=False,
+                  comment='Deposit offset')
 
 
 class DepositOwners(Base):
