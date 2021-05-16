@@ -242,6 +242,21 @@ class WellIntervals(Base):
     to_z = Column(Numeric,
                   nullable=False,
                   comment='To point value on z-axis')
+    depth_to = Column(Numeric,
+                      nullable=True,
+                      comment='Interval depth to')
+    depth_from = Column(Numeric,
+                        nullable=True,
+                        comment='Interval depth from')
+    zenit = Column(Numeric,
+                   nullable=True,
+                   comment='Interval zenit')
+    azimut = Column(Numeric,
+                    nullable=True,
+                    comment='Interval azimut')
+    content = Column(ForeignKey('rocks.id'),
+                     nullable=False,
+                     comment='Rock on this interval')
 
 
 class KnownBlock(Base):
