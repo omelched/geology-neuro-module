@@ -1,4 +1,3 @@
-
 # TODO: split into 2 parents and child classes
 from datetime import datetime
 
@@ -47,7 +46,8 @@ class TrainingSession(object):
 
     def _before_epoch(self, epoch: int):
         print(f'start epoch {epoch} — {datetime.now()}')
-        pass
+
+        ...
 
     def _after_epoch(self, epoch: int):
         m = nn.Softmax(dim=1)  # TODO: refactor as method
@@ -63,12 +63,10 @@ class TrainingSession(object):
         session.add_all(metrics)
         print(f'end epoch {epoch} — {datetime.now()}')
 
-        pass
-
     def _before_training(self):
         print(f'start training — {datetime.now()}')
 
-        pass
+        ...
 
     def _after_training(self):
         self.model.save()

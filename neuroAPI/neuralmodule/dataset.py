@@ -7,11 +7,14 @@ from neuroAPI.database.models import BorderPointType as _BPType
 # credit to https://github.com/hcarlens/pytorch-tabular/blob/master/fast_tensor_data_loader.py
 class FastDataLoader(object):  # TODO: refactor after init from database
     def __init__(self,
+                 dataframe: pd.DataFrame = None,
                  file_path: str = None,
                  batch_size: int = 64,
                  shuffle: bool = False,
                  borders: dict[str, dict[_BPType, float]] = None,
                  ):
+
+        assert bool(dataframe) != bool(file_path)
 
         if batch_size:
             try:
@@ -20,7 +23,7 @@ class FastDataLoader(object):  # TODO: refactor after init from database
                 ValueError('`batch_size` is not int-able')
 
         if not file_path:
-            raise NotImplementedError  # TODO: implement init from database
+            self.raw_data
         else:
             self.raw_data = pd.read_csv(file_path,
                                         usecols=['center.x', 'center.y', 'center.z', 'code.index'])

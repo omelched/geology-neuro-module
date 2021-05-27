@@ -1,4 +1,5 @@
 import contextlib
+import uuid
 
 from sqlalchemy import create_engine
 from sqlalchemy.pool import NullPool
@@ -58,3 +59,23 @@ class DatabaseHandler(object):
     @property
     def active_session(self):
         return self._active_session
+
+    def get_object_by_id(self, cls: sqlalchemy.orm.declarative_base(), idx: uuid.UUID,
+                         session: sqlalchemy.orm.Session = None):
+
+        # assert issubclass(cls, sqlalchemy.orm.declarative_base())  # FIXME
+        assert isinstance(idx, uuid.UUID)
+
+        if not session:
+            session = self.active_session
+
+        if not session:
+            raise NotImplementedError  # TODO: Implement
+
+        q_result = session.execute(sqlalchemy.select(cls)
+                                   .where(cls.id == idx), None, None).fetchone()
+
+        if not q_result:
+            return None
+        else:
+            return q_result[0]

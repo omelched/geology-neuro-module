@@ -6,6 +6,9 @@ from jsonrpc.backend.flask import api
 from neuroAPI.application import server
 from neuroAPI.application.ext import CoordinatesDict
 
+from neuroAPI.database import database_handler
+from neuroAPI.database.models import Deposit
+
 server.register_blueprint(api.as_blueprint())
 
 
@@ -76,11 +79,16 @@ def train_neural_network(deposit_id: str, max_epoch: int, block_size: float) -> 
     :return: Returns UUID of NN, which WILL BE created in DB in case of succesfull training
     :rtype: str
     """
+
+    with database_handler.get_session() as session:
+        deposit = database_handler.get_object_by_id(Deposit, uuid.UUID(deposit_id))
+        df
+
     return str(uuid.uuid4())
-               
+
 
 @api.dispatcher.add_method(name='train.cross_validation')
-def train_neural_network(deposit_id: str, max_epoch: int, block_size: float) -> str:
+def crossvalidate_neural_network(deposit_id: str, max_epoch: int, block_size: float) -> str:
     """
     Starts cross-validation training.
 
