@@ -35,7 +35,7 @@ if not os.path.exists(os.path.dirname(LOG_FILE)):
 if logger.handlers:
     logger.handlers = []
 
-logger.addHandler(_get_file_handler())
+# logger.addHandler(_get_file_handler())
 logger.addHandler(_get_console_handler())
 logger.propagate = False
 
