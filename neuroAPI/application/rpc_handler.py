@@ -12,7 +12,7 @@ from neuroAPI.neuralmodule.ext import NeuralNetwork
 from neuroAPI.neuralmodule.dataset import FastDataLoader
 from neuroAPI.neuralmodule.training import TrainingSession
 
-server.register_blueprint(api.as_blueprint())
+server.register_blueprint(api.as_blueprint(), url_prefix='/api')
 
 
 @api.dispatcher.add_method(name='service.echo')
