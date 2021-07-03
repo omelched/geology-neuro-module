@@ -51,8 +51,8 @@ class TrainingSession(object):
 
     def _after_epoch(self, epoch: int):
         m = nn.Softmax(dim=1)  # TODO: refactor as method
-        cm = ConfusionMatrix(self.dataloader.tensors[1].numpy(),
-                             m(self.model(self.dataloader.tensors[0])).argmax(dim=1).numpy())
+        cm = ConfusionMatrix(self.dataloader.data[1].numpy(),
+                             m(self.model(self.dataloader.data[0])).argmax(dim=1).numpy())
         metrics = [PYCMMetric(name=m,
                               metric_type=MetricType.overall_stat,
                               value=v,
@@ -73,11 +73,11 @@ class TrainingSession(object):
         session = database_handler.active_session  # TODO: refactor to generator
         session.add(self.model)
         m = nn.Softmax(dim=1)  # TODO: refactor as method
-        pred = m(self.model(self.dataloader.tensors[0])).argmax(dim=1)  # TODO: refactor as neural network method
+        pred = m(self.model(self.dataloader.data[0])).argmax(dim=1)  # TODO: refactor as neural network method
         rocks = Rock.get_rocks_in_deposit(self.model.deposit)
         index_id_rocks_dict = {rock[0].index: rock[0].id for rock in rocks}
 
-        coords = pd.DataFrame(self.dataloader.tensors[0].numpy())
+        coords = pd.DataFrame(self.dataloader.data[0].numpy())
         coords = self.dataloader.denormalize(coords)
         predicted_blocks = [PredictedBlock(neural_model_id=self.model.id,
                                            center_x=round(coords.iloc[i, 0].item(), 3),

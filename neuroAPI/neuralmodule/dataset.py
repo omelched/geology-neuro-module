@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import torch
 
 from neuroAPI.database.models import BorderPointType as _BPType
@@ -11,10 +12,10 @@ class FastDataLoader(object):  # TODO: refactor after init from database
                  file_path: str = None,
                  batch_size: int = 64,
                  shuffle: bool = False,
-                 borders: dict[str, dict[_BPType, float]] = None,
+                 borders: dict[str, dict[_BPType, float]] = None
                  ):
 
-        assert bool(dataframe) != bool(file_path)
+        assert (dataframe is not None) != bool(file_path)
 
         if batch_size:
             try:
@@ -23,15 +24,18 @@ class FastDataLoader(object):  # TODO: refactor after init from database
                 ValueError('`batch_size` is not int-able')
 
         if not file_path:
-            self.raw_data
+            self.raw_data = dataframe
+            self.raw_data.columns = ['id', 'center.x', 'center.y', 'center.z', 'code.index']
+
         else:
             self.raw_data = pd.read_csv(file_path,
-                                        usecols=['center.x', 'center.y', 'center.z', 'code.index'])
+                                        usecols=['id', 'center.x', 'center.y', 'center.z', 'code.index'])
 
-        prep_data = self.raw_data.rename(columns={self.raw_data.columns[0]: 'X_x',
-                                                  self.raw_data.columns[1]: 'X_y',
-                                                  self.raw_data.columns[2]: 'X_z',
-                                                  self.raw_data.columns[3]: 'Y'})
+        prep_data = self.raw_data.rename(columns={self.raw_data.columns[0]: 'id',
+                                                  self.raw_data.columns[1]: 'X_x',
+                                                  self.raw_data.columns[2]: 'X_y',
+                                                  self.raw_data.columns[3]: 'X_z',
+                                                  self.raw_data.columns[4]: 'Y'})
         self.input_columns = ['X_x', 'X_y', 'X_z']
 
         if not borders:
@@ -42,9 +46,9 @@ class FastDataLoader(object):  # TODO: refactor after init from database
 
         prep_data = self.preprocess(prep_data, input_columns=self.input_columns, borders=self.borders)
 
-        self.tensors = (torch.from_numpy(prep_data[self.input_columns].to_numpy()).type(torch.FloatTensor),
-                        torch.from_numpy(prep_data['Y'].to_numpy()).type(torch.LongTensor))
-        self.dataset_len = self.tensors[0].shape[0]
+        self.data = (torch.from_numpy(prep_data[self.input_columns].to_numpy().astype(np.float64)).type(torch.FloatTensor),
+                     torch.from_numpy(prep_data['Y'].to_numpy().astype(np.int8)).type(torch.LongTensor))
+        self.dataset_len = self.data[0].shape[0]
         self.batch_size = batch_size
         self.shuffle = shuffle
 
@@ -59,8 +63,8 @@ class FastDataLoader(object):  # TODO: refactor after init from database
 
         for _cn in df.columns:
             cn = self.input_columns[_cn]
-            _min = self.borders[cn][_BPType.min]
-            _max = self.borders[cn][_BPType.max]
+            _min = np.float64(self.borders[cn][_BPType.min])
+            _max = np.float64(self.borders[cn][_BPType.max])
             df[_cn] = df[_cn] * (_max - _min) + _min
 
         pd.options.mode.chained_assignment = 'warn'
@@ -117,13 +121,13 @@ class FastDataLoader(object):  # TODO: refactor after init from database
     def __iter__(self):
         if self.shuffle:
             r = torch.randperm(self.dataset_len)
-            self.tensors = [t[r] for t in self.tensors]
+            self.data = [t[r] for t in self.data]
         self.i = 0
         return self
 
     def __next__(self):
         if self.i >= self.dataset_len:
             raise StopIteration
-        batch = tuple(t[self.i:self.i + self.batch_size] for t in self.tensors)
+        batch = tuple(t[self.i:self.i + self.batch_size] for t in self.data)
         self.i += self.batch_size
         return batch

@@ -8,6 +8,7 @@ from sqlalchemy import Column, String, Numeric, ForeignKey, Integer, CheckConstr
 from sqlalchemy.orm import declarative_base, Session
 from sqlalchemy.types import CHAR, Enum
 from sqlalchemy_utils import force_instant_defaults
+import pandas as pd
 
 from neuroAPI.database.ext import GUID
 from neuroAPI.database import database_handler
@@ -96,6 +97,22 @@ class Deposit(Base):
     name = Column(String(64),
                   nullable=False,
                   comment='Deposit name')
+
+    def get_known_blocks(self, block_size: float, session: Session = None):
+        if not session:
+            session = database_handler.active_session
+
+        q_result = session.execute(select(KnownBlock.id,
+                                          KnownBlock.center_x,
+                                          KnownBlock.center_y,
+                                          KnownBlock.center_z,
+                                          Rock.index)
+                                   .join(Well, and_(Well.id == KnownBlock.well_id,
+                                                   Well.deposit_id == self.id))
+                                   .join(Rock, Rock.id == KnownBlock.content)
+                                   .where(KnownBlock.size == block_size))
+
+        return pd.DataFrame(q_result.all(), copy=True)
 
 
 class DepositOwners(Base):

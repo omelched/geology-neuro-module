@@ -61,7 +61,7 @@ class DatabaseHandler(object):
         return self._active_session
 
     def get_object_by_id(self, cls: sqlalchemy.orm.declarative_base(), idx: uuid.UUID,
-                         session: sqlalchemy.orm.Session = None):
+                         session: sqlalchemy.orm.Session = None) -> sqlalchemy.orm.declarative_base():
 
         # assert issubclass(cls, sqlalchemy.orm.declarative_base())  # FIXME
         assert isinstance(idx, uuid.UUID)
