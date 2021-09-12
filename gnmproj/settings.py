@@ -31,29 +31,6 @@ ALLOWED_HOSTS = ['*']
 
 APPEND_SLASH = False
 
-CACHES = {
-    'default': {
-        'BACKEND': 'gnmproj.apps.gnm.HashedDatabaseCache',
-        'LOCATION': 'hashcache_table',
-    }
-}
-
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-DATABASES = {
-    'default': {
-        'ENGINE': os.environ.get('DATABASE_ENGINE', 'django.db.backends.sqlite3'),
-        'NAME': os.environ.get('DATABASE_NAME', 'db.sqlite3'),
-        'USER': os.environ.get('DATABASE_USER', ''),
-        'PASSWORD': os.environ.get('DATABASE_PASSWORD', ''),
-        'HOST': os.environ.get('DATABASE_HOST', ''),
-        'PORT': os.environ.get('DATABASE_PORT', ''),
-        'OPTIONS': {
-            'application_name': os.environ.get('DATABASE_application_name', f'gnmproj@{RELEASE}')
-        } if os.environ.get('DATABASE_ENGINE', None) == 'django.db.backends.postgresql' else {}
-    }
-}
-
 DEBUG = os.environ.get('DEBUG', False)
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -69,6 +46,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.messages',
     "rest_framework",
+]
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'gnmproj.apps.gnm.src.JWTModelBackend'
 ]
 
 MIDDLEWARE = [
@@ -99,7 +81,30 @@ TEMPLATES = [
     }
 ]
 
-# WSGI_APPLICATION = 'gnmproj.wsgi.application'
+CACHES = {
+    'default': {
+        'BACKEND': 'gnmproj.apps.gnm.src.HashedDatabaseCache',
+        'LOCATION': 'hashcache_table',
+    }
+}
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+DATABASES = {
+    'default': {
+        'ENGINE': os.environ.get('DATABASE_ENGINE', 'django.db.backends.sqlite3'),
+        'NAME': os.environ.get('DATABASE_NAME', 'db.sqlite3'),
+        'USER': os.environ.get('DATABASE_USER', ''),
+        'PASSWORD': os.environ.get('DATABASE_PASSWORD', ''),
+        'HOST': os.environ.get('DATABASE_HOST', ''),
+        'PORT': os.environ.get('DATABASE_PORT', ''),
+        'OPTIONS': {
+            'application_name': os.environ.get('DATABASE_application_name', f'gnmproj@{RELEASE}')
+        } if os.environ.get('DATABASE_ENGINE', None) == 'django.db.backends.postgresql' else {}
+    }
+}
+
+WSGI_APPLICATION = 'gnmproj.wsgi.application'
 
 AUTH_PASSWORD_VALIDATORS = [
     {

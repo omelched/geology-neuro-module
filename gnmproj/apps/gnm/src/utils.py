@@ -1,11 +1,14 @@
 import inspect
 import typing
 
+from django.contrib.auth import authenticate
+from django.http.response import HttpResponseForbidden
+
 
 def check_typing(func):
     def wrapper(*args, **kwargs):
-
         parameters = {name: p for name, p in inspect.signature(func).parameters.items()}
+
         try:
             for k, v in kwargs.items():
 
@@ -20,5 +23,18 @@ def check_typing(func):
             pass
 
         return func(*args, **kwargs)
+
+    return wrapper
+
+
+def requires_jwt(func):
+    def wrapper(request, *args, **kwargs):
+
+        jwt = kwargs.pop('jwt')
+
+        if not authenticate(request=request, jwt=jwt, **kwargs):
+            return HttpResponseForbidden()
+
+        return func(request, *args, **kwargs)
 
     return wrapper

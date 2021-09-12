@@ -4,4 +4,5 @@ from .metric import Metric
 from .neural_model import CrossValidation, NeuralModel, NeuralModelMetricValues
 from .rock import Rock
 from .well import Well, WellInterval
+from .user import GnmUser
 

@@ -4,7 +4,7 @@ from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.core.cache import cache
 
-from .src.utils import check_typing
+from .src import check_typing
 from .src.neuralmodule import train_network
 
 logger = get_task_logger(__name__)
