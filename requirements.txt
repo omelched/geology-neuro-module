@@ -9,6 +9,7 @@ click-didyoumean==0.0.3
 click-plugins==1.1.1
 click-repl==0.2.0
 Django==3.2.7
+djangorestframework==3.12.4
 json-rpc==1.13.0
 kombu==5.1.0
 numpy==1.21.2
