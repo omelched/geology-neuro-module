@@ -31,10 +31,14 @@ def login(request, username: str, password: str) -> Any:
         'exp': int((now + timedelta(days=14)).timestamp())
     }
 
+    user.gnm_user.jwt_issuance_time = now
+    user.gnm_user.save()
+
     return jwt.encode(payload, settings.SECRET_KEY, algorithm="HS256")
 
 
 @api.dispatcher.add_method(name='train.singular')
+@requires_jwt
 @check_typing
 def train_neural_network(request, deposit_id: UUID, max_epochs: int, block_size: int) -> Any:
     deposit = Deposit.objects.get(id=deposit_id)
