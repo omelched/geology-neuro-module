@@ -17,6 +17,9 @@ _ROCK_ID_BUFFER: dict[UUID, dict[int, UUID]] = {}
 
 
 class NeuralNetwork(NeuralModel, _NeuralNetwork):
+    class Meta:
+        proxy = True
+
     def __init__(self,
                  output_count: int,
                  deposit: Deposit,
@@ -64,6 +67,8 @@ class NeuralNetwork(NeuralModel, _NeuralNetwork):
 
 
 class PYCMMetricValue(NeuralModelMetricValues, Metric):
+    class Meta:
+        proxy = True
 
     def __init__(
             self,
@@ -97,6 +102,7 @@ class PYCMMetricValue(NeuralModelMetricValues, Metric):
 
 
 from .training import TrainingSession
+
 
 def train_network(deposit_id: UUID, max_epochs: int, block_size: int):
     data = pd.DataFrame(
