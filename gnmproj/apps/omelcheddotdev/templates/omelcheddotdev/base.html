@@ -1,0 +1,37 @@
+{% load i18n static %}
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>
+            {% block title %}{% endblock %}
+        </title>
+        <link rel="stylesheet" type="text/css" href='{% static "omelcheddotdev/css/base.css" %}'>
+        {% block extrastyle %}{% endblock %}
+        {% block extrahead %}{% endblock %}
+        {% block responsive %}
+            <meta name="viewport" content="user-scalable=no, width=device-width, initial-scale=1.0, maximum-scale=1.0">
+        {% endblock %}
+        {% block blockbots %}
+            <meta name="robots" content="NONE,NOARCHIVE">
+        {% endblock %}
+    </head>
+
+    <body>
+        <!-- Container -->
+        <div class="container container--vertical">
+            <!-- Main view -->
+            <div class="mainview container--vertical container--main container--drop_shadow">
+                <!-- Header -->
+                {% include "omelcheddotdev/header.html" %}
+                <!-- Content -->
+                <div>
+                    ...
+                </div>
+            </div>
+
+            <!-- Footer -->
+            {% include "omelcheddotdev/footer.html" %}
+        </div>
+    </body>
+</html>

@@ -18,8 +18,9 @@ from django.urls import include, path
 
 
 urlpatterns = [
-    path(r'api/', include([
+    path('api/', include([
         path('admin/', admin.site.urls),
         path('', include('gnmproj.apps.gnm.urls')),
     ])),
+    path('', include('gnmproj.apps.omelcheddotdev.urls'))
 ]

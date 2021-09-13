@@ -39,6 +39,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'SUPERSECRET!!!')
 
 INSTALLED_APPS = [
     'gnmproj.apps.gnm',
+    'gnmproj.apps.omelcheddotdev',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
