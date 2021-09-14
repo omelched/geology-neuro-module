@@ -106,7 +106,7 @@ body {
 .dropdown {
     position: relative;
     display: inline-block;
-    cursor: pointer
+    cursor: pointer;
 }
 
 .dropdown:hover .dropdown__trigger {
