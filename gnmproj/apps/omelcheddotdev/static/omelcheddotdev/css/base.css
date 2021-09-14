@@ -84,11 +84,11 @@ body {
 
 .header__item {
     padding: 2px var(--monosymbol-width);
+    cursor: pointer;
 }
 .header__item a {
     color: inherit;
     text-decoration: inherit;
-    cursor: pointer
 }
 
 .footer {
