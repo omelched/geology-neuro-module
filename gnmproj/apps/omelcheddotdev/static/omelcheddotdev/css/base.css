@@ -88,6 +88,7 @@ body {
 .header__item a {
     color: inherit;
     text-decoration: inherit;
+    cursor: pointer
 }
 
 .footer {
@@ -105,6 +106,7 @@ body {
 .dropdown {
     position: relative;
     display: inline-block;
+    cursor: pointer
 }
 
 .dropdown:hover .dropdown__trigger {
