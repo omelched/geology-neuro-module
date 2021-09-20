@@ -20,6 +20,13 @@ class Deposit(models.Model):
         related_name='deposits',
         verbose_name=_('owners'),
     )
+    bias = models.FloatField(
+        null=False,
+        blank=False,
+        default=0,
+        editable=True,
+        verbose_name=_('bias'),
+    )
 
     objects = models.Manager()
 
