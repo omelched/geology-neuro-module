@@ -2,6 +2,7 @@ from django.db import models
 from django.utils.translation import ugettext_lazy as _
 
 from .deposit import Deposit
+from .rock import Rock
 
 
 class Well(models.Model):
@@ -121,6 +122,42 @@ class WellInterval(models.Model):
         blank=False,
         editable=True,
         verbose_name=_('to_z'),
+    )
+    depth_to = models.FloatField(
+        null=False,
+        blank=False,
+        default=.0,
+        editable=True,
+        verbose_name=_('depth_to'),
+    )
+    depth_from = models.FloatField(
+        null=False,
+        blank=False,
+        default=.0,
+        editable=True,
+        verbose_name=_('depth_from'),
+    )
+    zenit = models.FloatField(
+        null=False,
+        blank=False,
+        default=.0,
+        editable=True,
+        verbose_name=_('zenit'),
+    )
+    azimut = models.FloatField(
+        null=False,
+        blank=False,
+        default=.0,
+        editable=True,
+        verbose_name=_('azimut'),
+    )
+    content = models.ForeignKey(
+        Rock,
+        models.CASCADE,
+        related_name='+',
+        null=False,
+        editable=True,
+        verbose_name=_('content')
     )
 
     objects = models.Manager()
