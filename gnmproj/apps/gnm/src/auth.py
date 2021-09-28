@@ -1,4 +1,5 @@
 from datetime import datetime
+import pytz
 
 from django.contrib.auth.backends import ModelBackend
 from django.contrib.auth import get_user_model
@@ -36,7 +37,8 @@ class JWTModelBackend(ModelBackend):
             # user has been deleted since issuance
             return
 
-        if datetime.fromtimestamp(payload['iat']) < user.gnm_user.jwt_issuance_time:
+        if pytz.timezone(settings.TIME_ZONE).localize(datetime.fromtimestamp(payload['iat'])) \
+                < user.gnm_user.jwt_issuance_time:
             # JWT `iat` too old
             return
 
