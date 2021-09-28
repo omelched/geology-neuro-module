@@ -21,6 +21,19 @@ stdout, _ = process.communicate()
 
 RELEASE = stdout.decode('utf-8').strip()
 
+
+class _SentryWillIgnoreMe(Exception):
+    pass
+
+
+def _ignore_scpecified_exceptions(event, hint):
+    if 'exc_info' in hint:
+        exc_type, exc_value, tb = hint['exc_info']
+        if issubclass(exc_value, _SentryWillIgnoreMe):
+            return None
+    return event
+
+
 # config
 
 ADMINS = [
@@ -158,8 +171,11 @@ if not os.environ.get('DISABLE_SENTRY', False):
         traces_sample_rate=float(os.environ.get('SENTRY_SAMPLE_RATE', 0)),
         ignore_errors=[
             'Http404'
-        ]
+        ],
+        before_send=_ignore_scpecified_exceptions,
     )
+
+SENTRY_WILL_IGNORE_ME = _SentryWillIgnoreMe
 
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_RESULT_ACCEPT_CONTENT = ['application/json']

@@ -7,7 +7,7 @@ from django.conf import settings
 import jwt
 
 from ..rpc import api
-from ..src import check_typing, requires_jwt
+from ..src import check_typing, requires_jwt, InvalidCredentials, generate_DNE
 from ..models import Deposit
 from ..tasks import train_network
 
@@ -22,7 +22,7 @@ def echo(request, *args, **kwargs):
 def login(request, username: str, password: str) -> Any:
     user = authenticate(username=username, password=password)
     if not user:
-        raise ValueError('Invalid credentials')
+        raise InvalidCredentials
     now = datetime.now().replace(microsecond=0)
 
     payload = {
@@ -46,14 +46,14 @@ def train_neural_network(request, deposit_id: UUID, max_epochs: int, block_size:
     queryset = deposit.wells
 
     if not queryset.exists():
-        raise queryset.model.DoesNotExist(f'{queryset.model.__name__} matching query does not exist.')
+        raise generate_DNE(queryset.model.DoesNotExist)(f'{queryset.model.__name__} matching query does not exist.')
 
     for well in queryset.prefetch_related('known_blocks').all():
 
         well_queryset = well.known_blocks.filter(size=block_size)
 
         if not well_queryset.exists():
-            raise well_queryset.model.DoesNotExist(f'{well_queryset.model.__name__} matching query does not exist.')
+            raise generate_DNE(well_queryset.model.DoesNotExist)(f'{well_queryset.model.__name__} matching query does not exist.')
 
     task = train_network.delay(deposit.id, max_epochs, block_size)
 

@@ -38,7 +38,6 @@ class Block(models.Model):
     )
 
 
-
 class KnownBlock(Block):
     class Meta:
         verbose_name = _('known block')
@@ -81,6 +80,7 @@ class PredictedBlock(Block):
                 name='unique neural_model, x, y, z'
             )
         ]
+
     neural_model = models.ForeignKey(
         NeuralModel,
         models.CASCADE,
