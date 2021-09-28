@@ -104,13 +104,13 @@ class PYCMMetricValue(NeuralModelMetricValues, Metric):
 from .training import TrainingSession
 
 
-def train_network(deposit_id: UUID, max_epochs: int, block_size: int):
+def train_network(deposit_id: UUID, max_epochs: int, block_size: int, update_state_callback: callable = None):
     data = pd.DataFrame(
         list(
             KnownBlock.objects
-                .filter(well__deposit__id=deposit_id, size=block_size)
-                .annotate(index=F('content__index'))
-                .values('id', 'x', 'y', 'z', 'index')
+            .filter(well__deposit__id=deposit_id, size=block_size)
+            .annotate(index=F('content__index'))
+            .values('id', 'x', 'y', 'z', 'index')
         )
     )
     nn = NeuralNetwork(
@@ -120,6 +120,11 @@ def train_network(deposit_id: UUID, max_epochs: int, block_size: int):
         max_epochs=max_epochs,
         cross_validation=None
     )
-    ts = TrainingSession(FastDataLoader(dataframe=data, shuffle=True), nn, epochs=max_epochs)
+    ts = TrainingSession(
+        FastDataLoader(dataframe=data, shuffle=True),
+        nn,
+        epochs=max_epochs,
+        update_state_callback=update_state_callback
+    )
 
     return nn.id

@@ -16,13 +16,18 @@ class _IgnorableGMNException(_GNMException, SentryWillIgnoreMe):
     pass
 
 
+def generate_DNE(does_not_exist_exception):
+    return new_class('DoesNotExist', bases=(does_not_exist_exception, _IgnorableGMNException))
+
+
 class InvalidCredentials(_IgnorableGMNException):
     pass
 
 
-class DoesNotExist(_IgnorableGMNException):
+class ORMObjectDoesNotExist(_IgnorableGMNException):
     pass
 
 
-def generate_DNE(does_not_exist_exception):
-    return new_class('DoesNotExist', bases=(does_not_exist_exception, SentryWillIgnoreMe))
+class TaskDoesNotExist(_IgnorableGMNException):
+    pass
+

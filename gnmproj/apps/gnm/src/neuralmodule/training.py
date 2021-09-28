@@ -15,7 +15,9 @@ class TrainingSession(object):
                  model: _NeuralNetwork,
                  learning_rate: float = 1e-3,
                  batch_size: int = 64,
-                 epochs: int = 5):
+                 epochs: int = 5,
+                 update_state_callback: callable = None,
+                 ):
         if not dataloader or not model:
             raise ValueError  # TODO: elaborate
         self.dataloader = dataloader
@@ -25,6 +27,8 @@ class TrainingSession(object):
             'batch_size': batch_size,
             'epochs': epochs
         }
+        self.update_state_callback = update_state_callback
+
         self.loss_fn = nn.CrossEntropyLoss()
         self.optimizer = optim.Adam(self.model.parameters(), lr=learning_rate)
 
@@ -61,6 +65,8 @@ class TrainingSession(object):
                    for m, v in cm.overall_stat.items() if type(v) in (int, str, float)]
 
         PYCMMetricValue.objects.bulk_create(metrics)
+
+        self.update_state_callback(f"{round(epoch/self.training_params['epochs'] * 100, 2)} %")
 
     def _before_training(self):
         ...

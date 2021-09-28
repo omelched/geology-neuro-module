@@ -191,5 +191,8 @@ CELERY_BROKER_URL = (
     f"{os.environ.get('RMQ_VHOST', '')}"
 )
 CELERY_IMPORTS = (
-    ...,
+    'gnmproj.apps.gnm.tasks',
 )
+
+from .celeryapp import app
+CELERY_APP = app

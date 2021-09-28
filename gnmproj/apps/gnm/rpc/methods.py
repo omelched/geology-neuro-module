@@ -2,12 +2,13 @@ from uuid import UUID
 from typing import Any
 from datetime import datetime, timedelta
 
+from celery.result import AsyncResult
 from django.contrib.auth import authenticate
 from django.conf import settings
 import jwt
 
 from ..rpc import api
-from ..src import check_typing, requires_jwt, InvalidCredentials, generate_DNE
+from ..src import check_typing, requires_jwt, InvalidCredentials, generate_DNE, TaskDoesNotExist
 from ..models import Deposit
 from ..tasks import train_network
 
@@ -53,8 +54,24 @@ def train_neural_network(request, deposit_id: UUID, max_epochs: int, block_size:
         well_queryset = well.known_blocks.filter(size=block_size)
 
         if not well_queryset.exists():
-            raise generate_DNE(well_queryset.model.DoesNotExist)(f'{well_queryset.model.__name__} matching query does not exist.')
+            raise generate_DNE(well_queryset.model.DoesNotExist)(f'{well_queryset.model.__name__} matching query does '
+                                                                 f'not exist.')
 
     task = train_network.delay(deposit.id, max_epochs, block_size)
 
     return {'task-id': task.id}
+
+
+@api.dispatcher.add_method(name='train.get_result')
+@requires_jwt
+@check_typing
+def get_result(request, task_id: UUID) -> Any:
+    aresult = AsyncResult(str(task_id), settings.CELERY_APP)
+    if aresult.state == 'PENDING':
+        raise TaskDoesNotExist()
+    if aresult.ready():
+        result = aresult.get()
+    else:
+        result = None
+
+    return {'task-id': task_id, 'state': aresult.state, 'result': result, 'info': aresult.info}

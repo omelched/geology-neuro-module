@@ -1,11 +1,12 @@
 from contextlib import contextmanager
+import uuid
 
 from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.core.cache import cache
 
 from .src import check_typing
-from .src.neuralmodule import train_network
+from .src.neuralmodule import train_network as _train_network
 
 logger = get_task_logger(__name__)
 
@@ -20,22 +21,23 @@ def acquire_lock(lock, *args, **kwargs):
             cache.delete(lock)
 
 
-@shared_task
+@shared_task(bind=True)
 @check_typing
-def train_network(deposit_id: str, max_epochs: int, block_size: int):
+def train_network(self, deposit_id: uuid.UUID, max_epochs: int, block_size: int):
+
+    def callback(perc: str):
+        self.update_state(state='TRAINING', meta={'progress': perc})
+
     lock = {
         'deposit_id': deposit_id,
         max_epochs: max_epochs,
         block_size: int
     }
-    logger.debug('Task started')
 
     with acquire_lock(lock) as acquired:
         if acquired:
+            neural_model_id = _train_network(deposit_id, max_epochs, block_size, update_state_callback=callback)
 
-            neural_model_id = train_network(deposit_id, max_epochs, block_size)
+            return str(neural_model_id)
 
-            logger.debug('Task finished')
-            return neural_model_id
-
-    logger.debug('Task is already in process by another worker')
+    self.update_state(state='ABORTED', meta={})
