@@ -31,7 +31,7 @@ def train_network(self, deposit_id: uuid.UUID, max_epochs: int, block_size: int)
     lock = {
         'deposit_id': deposit_id,
         max_epochs: max_epochs,
-        block_size: int
+        block_size: block_size
     }
 
     with acquire_lock(lock) as acquired:
