@@ -5,14 +5,16 @@ from pycm import ConfusionMatrix
 from torch import nn, optim
 
 from .dataset import FastDataLoader
-from ..neuralmodule import _NeuralNetwork, PYCMMetricValue
-from ...models import Metric, Rock, PredictedBlock
+from ...models import Rock, PredictedBlock, NeuralModelMetricValues
+from ...models import Metric as MetricModel
+from .network import NeuralNetwork
+from .metrics import MetricValue
 
 
 class TrainingSession(object):
     def __init__(self,
                  dataloader: FastDataLoader,
-                 model: _NeuralNetwork,
+                 model: NeuralNetwork,
                  learning_rate: float = 1e-3,
                  batch_size: int = 64,
                  epochs: int = 5,
@@ -50,29 +52,32 @@ class TrainingSession(object):
         self._after_training()
 
     def _before_epoch(self, epoch: int):
+        print(f'starting epoch {epoch}')
         ...
 
     def _after_epoch(self, epoch: int):
+        print(f'finished epoch {epoch}, saving metrics')
         m = nn.Softmax(dim=1)  # TODO: refactor as method
         cm = ConfusionMatrix(self.dataloader.data[1].numpy(),
                              m(self.model(self.dataloader.data[0])).argmax(dim=1).numpy())
 
-        metrics = [PYCMMetricValue(name=m,
-                                   metric_type=Metric.MetricTypeEnum.OVERALL,
-                                   value=v,
-                                   epoch=epoch,
-                                   neural_model=self.model)
+        metrics = [MetricValue(name=m,
+                               metric_type=MetricModel.MetricTypeEnum.OVERALL,
+                               value=v,
+                               epoch=epoch,
+                               neural_model=self.model.model)
                    for m, v in cm.overall_stat.items() if type(v) in (int, str, float)]
 
-        PYCMMetricValue.objects.bulk_create(metrics)
+        NeuralModelMetricValues.objects.bulk_create([metric.model for metric in metrics])
 
-        self.update_state_callback(f"{round(epoch/self.training_params['epochs'] * 100, 2)} %")
+        self.update_state_callback(f"{round(epoch / self.training_params['epochs'], 3)} %")
 
     def _before_training(self):
-        ...
+        self.model.save()
+        print('Training started')
 
     def _after_training(self):
-        self.model.save()
+        print('Training finished, predicting')
         m = nn.Softmax(dim=1)  # TODO: refactor as method
         pred = m(self.model(self.dataloader.data[0])).argmax(dim=1)  # TODO: refactor as neural network method
         rocks = Rock.objects.filter(deposit=self.model.deposit)
@@ -80,9 +85,10 @@ class TrainingSession(object):
 
         coords = pd.DataFrame(self.dataloader.data[0].numpy())
         coords = self.dataloader.denormalize(coords)
+
         predicted_blocks = [
             PredictedBlock(
-                neural_model=self.model,
+                neural_model=self.model.model,
                 x=round(coords.iloc[i, 0].item(), 3),
                 y=round(coords.iloc[i, 1].item(), 3),
                 z=round(coords.iloc[i, 2].item(), 3),

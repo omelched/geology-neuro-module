@@ -17,3 +17,6 @@ class HashedDatabaseCache(DatabaseCache):
         key = hashlib.md5(key).digest()
 
         return super(HashedDatabaseCache, self).make_key(key, version=version)
+
+    def delete(self, key, version=None):
+        return self._base_delete_many([self.make_key(key, version)])

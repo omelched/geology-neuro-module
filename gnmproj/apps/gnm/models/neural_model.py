@@ -125,6 +125,8 @@ class NeuralModelMetricValues(models.Model):
         verbose_name=_('value')
     )
 
+    objects = models.Manager()
+
     def __str__(self):
         return f'{self.neural_model} / {self.metric} [{self.epoch}]' \
                + (f' {self.rock.name}' if self.rock else '')

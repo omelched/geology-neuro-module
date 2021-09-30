@@ -97,8 +97,8 @@ class FastDataLoader(object):  # TODO: refactor after init from database
             assert _cn in borders, ValueError(f'No {_cn} in borders.')
             assert isinstance(borders[_cn], dict), TypeError(f'{type(borders[_cn])} passed. dict expected')
             assert all(k in borders[_cn] for k in [
-                DepositBorders.PointTypeEnum.Min,
-                DepositBorders.PointTypeEnum.Max
+                DepositBorders.PointTypeEnum.MIN,
+                DepositBorders.PointTypeEnum.MAX
             ]), ValueError(f'no min-max borders in {_cn}')
             assert borders[_cn][DepositBorders.PointTypeEnum.MIN] < borders[_cn][DepositBorders.PointTypeEnum.MAX],\
                 ValueError(f'`{_cn}.min` >= `{_cn}.max')

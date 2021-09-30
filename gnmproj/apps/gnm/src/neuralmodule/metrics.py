@@ -1,37 +1,38 @@
 from typing import Union
-from torch import Tensor
+
+from ...models import Metric
+from ...models import Rock, NeuralModel, NeuralModelMetricValues
 
 
-class Metric(object):
+class MetricValue(object):
 
-    _value: Union[float, int, str]
-    _name: str
-
-    def __init__(self, name: str, value: Union[float, int, str] = None, objects: tuple[Tensor, Tensor] = None):
+    def __init__(self,
+                 name: str,
+                 metric_type: Metric.MetricTypeEnum,
+                 value: Union[float, int, str],
+                 neural_model: NeuralModel,
+                 epoch: int,
+                 rock_index: int = None,
+                 ):
         # if bool(value) == bool(objects):  # TODO: check that only `value` or only `object` is passed
         #     if value is None:
         #         raise ValueError('Neither `value` nor `objects` passed')
         #     else:
         #         raise ValueError('`value` and `objects` passed simultaneously')
         assert type(name) == str, TypeError('`name` is not string')
+        assert type(metric_type) == Metric.MetricTypeEnum, TypeError(
+            '`metric_type` is not from `MetricType` enum')
+        assert type(value) in [float, int, str], TypeError(f'type(`value`) == {type(value)}. '
+                                                           'Expected Union[float, int, str]')
+        assert type(neural_model) == NeuralModel, TypeError(f'type(`neural_model`) == {type(neural_model)}.')
 
-        self._name = name
-        if objects:
-            self._value = self.calculate(objects)
-        else:
-            self._value = value
+        self.model = NeuralModelMetricValues(
+            neural_model=neural_model,
+            metric=Metric.objects.get_or_create(name=name, mtype=metric_type)[0],
+            epoch=epoch,
+            rock=Rock.objects.get(deposit=neural_model.deposit.id, index=rock_index) if rock_index else None,
+            value=value,
+        )
 
-    def calculate(self, objects: tuple[Tensor, Tensor]) -> float:
-
-        assert objects, ValueError('No `objects` passed')
-        assert len(objects) == 2, ValueError(f'{len(objects)} items in `objects` passed. 2 items expected')
-        assert type(objects[0]) == Tensor, TypeError(f'{type(objects[0])} passed. torch.Tensor expected')
-        assert type(objects[1]) == Tensor, TypeError(f'{type(objects[1])} passed. torch.Tensor expected')
-        assert objects[0].size()[0] == objects[1].size()[0], ValueError('Tensors length dont match.'
-                                                                        f'{objects[0].size()[0]} !='
-                                                                        f'{objects[1].size()[0]}')
-        return self._calculate(objects[0], objects[1])
-
-    @staticmethod
-    def _calculate(pred: Tensor, true: Tensor) -> float:
-        raise NotImplementedError
+    def save(self):
+        self.model.save()

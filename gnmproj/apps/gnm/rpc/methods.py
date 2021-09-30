@@ -44,18 +44,19 @@ def login(request, username: str, password: str) -> Any:
 def train_neural_network(request, deposit_id: UUID, max_epochs: int, block_size: int) -> Any:
     deposit = Deposit.objects.get(id=deposit_id)
 
-    queryset = deposit.wells
+    well_queryset = deposit.wells
 
-    if not queryset.exists():
-        raise generate_DNE(queryset.model.DoesNotExist)(f'{queryset.model.__name__} matching query does not exist.')
+    if not well_queryset.exists():
+        raise generate_DNE(well_queryset.model.DoesNotExist)(f'{well_queryset.model.__name__} matching query '
+                                                             f'does not exist.')
 
-    for well in queryset.prefetch_related('known_blocks').all():
+    for well in well_queryset.prefetch_related('known_blocks').all():
 
-        well_queryset = well.known_blocks.filter(size=block_size)
+        kb_queryset = well.known_blocks.filter(size=block_size)
 
-        if not well_queryset.exists():
-            raise generate_DNE(well_queryset.model.DoesNotExist)(f'{well_queryset.model.__name__} matching query does '
-                                                                 f'not exist.')
+        if not kb_queryset.exists():
+            raise generate_DNE(kb_queryset.model.DoesNotExist)(f'{kb_queryset.model.__name__} matching query '
+                                                               f'does not exist.')
 
     task = train_network.delay(deposit.id, max_epochs, block_size)
 
@@ -66,12 +67,17 @@ def train_neural_network(request, deposit_id: UUID, max_epochs: int, block_size:
 @requires_jwt
 @check_typing
 def get_result(request, task_id: UUID) -> Any:
-    aresult = AsyncResult(str(task_id), settings.CELERY_APP)
+    aresult = AsyncResult(str(task_id))
     if aresult.state == 'PENDING':
         raise TaskDoesNotExist()
+    if aresult.state == 'TRAINING':
+        info = aresult.info['progress']
     if aresult.ready():
-        result = aresult.get()
+        try:
+            result = aresult.get()
+        except Exception as e:
+            result = str(e)
     else:
         result = None
 
-    return {'task-id': task_id, 'state': aresult.state, 'result': result, 'info': aresult.info}
+    return {'task-id': aresult.task_id, 'state': aresult.state, 'result': result, 'info': info or None}
