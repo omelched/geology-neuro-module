@@ -67,11 +67,12 @@ def train_neural_network(request, deposit_id: UUID, max_epochs: int, block_size:
 @requires_jwt
 @check_typing
 def get_result(request, task_id: UUID) -> Any:
+    info = None
     aresult = AsyncResult(str(task_id))
     if aresult.state == 'PENDING':
         raise TaskDoesNotExist()
     if aresult.state == 'TRAINING':
-        info = aresult.info['progress']
+        info = aresult.info['progress'] if 'progress' in info else None
     if aresult.ready():
         try:
             result = aresult.get()
@@ -80,4 +81,4 @@ def get_result(request, task_id: UUID) -> Any:
     else:
         result = None
 
-    return {'task-id': aresult.task_id, 'state': aresult.state, 'result': result, 'info': info or None}
+    return {'task-id': aresult.task_id, 'state': aresult.state, 'result': result, 'info': info}
