@@ -38,14 +38,7 @@ def train_network(self, deposit_id: uuid.UUID, max_epochs: int, block_size: int)
 
     with acquire_lock(lock) as acquired:
         if acquired:
-            old_outs = sys.stdout, sys.stderr
-            rlevel = self.app.conf.worker_redirect_stdouts_level
-
-            try:
-                self.app.log.redirect_stdouts_to_logger(logger, rlevel)
-                neural_model_id = _train_network(deposit_id, max_epochs, block_size, update_state_callback=callback)
-            finally:
-                sys.stdout, sys.stderr = old_outs
+            neural_model_id = _train_network(deposit_id, max_epochs, block_size, update_state_callback=callback)
 
             return str(neural_model_id)
 
