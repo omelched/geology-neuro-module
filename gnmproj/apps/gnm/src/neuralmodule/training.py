@@ -52,11 +52,11 @@ class TrainingSession(object):
         self._after_training()
 
     def _before_epoch(self, epoch: int):
-        print(f'starting epoch {epoch}')
+        print(f'starting epoch {epoch}', end='')
         ...
 
     def _after_epoch(self, epoch: int):
-        print(f'finished epoch {epoch}, saving metrics')
+        print(f'finished epoch {epoch}, saving metrics', end='')
         m = nn.Softmax(dim=1)  # TODO: refactor as method
         cm = ConfusionMatrix(self.dataloader.data[1].numpy(),
                              m(self.model(self.dataloader.data[0])).argmax(dim=1).numpy())
@@ -74,10 +74,10 @@ class TrainingSession(object):
 
     def _before_training(self):
         self.model.save()
-        print('Training started')
+        print('Training started', end='')
 
     def _after_training(self):
-        print('Training finished, predicting')
+        print('Training finished, predicting', end='')
         m = nn.Softmax(dim=1)  # TODO: refactor as method
         pred = m(self.model(self.dataloader.data[0])).argmax(dim=1)  # TODO: refactor as neural network method
         rocks = Rock.objects.filter(deposit=self.model.deposit)

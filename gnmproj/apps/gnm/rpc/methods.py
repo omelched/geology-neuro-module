@@ -72,7 +72,7 @@ def get_result(request, task_id: UUID) -> Any:
     if aresult.state == 'PENDING':
         raise TaskDoesNotExist()
     if aresult.state == 'TRAINING':
-        info = aresult.info['progress'] if 'progress' in info else None
+        info = aresult.info['progress'] if (info and 'progress' in info) else None
     if aresult.ready():
         try:
             result = aresult.get()
