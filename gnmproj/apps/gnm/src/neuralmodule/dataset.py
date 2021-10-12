@@ -64,7 +64,7 @@ class FastDataLoader(object):  # TODO: refactor after init from database
         for _cn in df.columns:
             cn = self.input_columns[_cn]
             _min = np.float64(self.borders[cn][DepositBorders.PointTypeEnum.MIN])
-            _max = np.float64(self.borders[cn][DepositBorders.PointTypeEnum.Max])
+            _max = np.float64(self.borders[cn][DepositBorders.PointTypeEnum.MAX])
             df[_cn] = df[_cn] * (_max - _min) + _min
 
         pd.options.mode.chained_assignment = 'warn'
