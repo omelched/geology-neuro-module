@@ -1,5 +1,3 @@
-# TODO: split into 2 parents and child classes
-
 import pandas as pd
 from pycm import ConfusionMatrix
 from torch import nn, optim
@@ -78,6 +76,7 @@ class TrainingSession(object):
         print('Training started', end='\n')
 
     def _after_training(self):
+        self.model.save()
         print('Training finished, predicting', end='\n')
         m = nn.Softmax(dim=1)  # TODO: refactor as method
         pred = m(self.model(self.dataloader.data[0]))

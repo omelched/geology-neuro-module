@@ -53,7 +53,7 @@ class NeuralNetwork(nn.Module):
     def save(self):
 
         buff = io.BytesIO()
-        torch.save(self, buff)
+        torch.save(self.state_dict(), buff)
         buff.seek(0)
         self.model.dump = buff.read()
         buff.close()

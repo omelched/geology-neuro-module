@@ -8,7 +8,7 @@ from django.conf import settings
 import jwt
 
 from ..rpc import api
-from ..src import check_typing, requires_jwt, InvalidCredentials, generate_DNE, TaskDoesNotExist
+from ..src import check_typing, requires_jwt, InvalidCredentials, generate_DNE, TaskDoesNotExist, predict
 from ..models import Deposit
 from ..tasks import train_network
 
@@ -63,6 +63,15 @@ def train_neural_network(request, deposit_id: UUID, max_epochs: int, block_size:
     return {'task-id': task.id}
 
 
+@api.dispatcher.add_method(name='predict')
+@requires_jwt
+@check_typing
+def predict(request, neural_model__id: UUID) -> Any:
+    predict(neural_model__id)
+
+    return {'ok': True}
+
+
 @api.dispatcher.add_method(name='train.get_result')
 @requires_jwt
 @check_typing
@@ -82,3 +91,4 @@ def get_result(request, task_id: UUID) -> Any:
         result = None
 
     return {'task-id': aresult.task_id, 'state': aresult.state, 'result': result, 'info': info}
+

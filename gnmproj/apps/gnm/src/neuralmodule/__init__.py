@@ -1,15 +1,17 @@
 from uuid import UUID
 import sys
+import torch
+import io
 
 
 import pandas as pd
 from django.db.models import F
 
-from .metrics import Metric
 from .network import NeuralNetwork
 from .dataset import FastDataLoader
-from .training import TrainingSession
-from ...models import KnownBlock
+from .train import TrainingSession
+from .predict import predict as _predict
+from ...models import KnownBlock, NeuralModel
 
 
 _METRIC_ID_BUFFER: dict[str, UUID] = {}  # TODO: buffers to database module?
@@ -43,3 +45,12 @@ def train_network(deposit_id: UUID, max_epochs: int, block_size: int, update_sta
     return nn.model.id
 
 
+def predict(neural_model_id: UUID):
+    nnmodel = NeuralModel.objects.get(pk=neural_model_id)
+    oc = KnownBlock.objects.filter(
+        well__deposit__id=nnmodel.deposit_id,
+        size=nnmodel.block_size).distinct('content_id').count()
+    nn = NeuralNetwork(nnmodel.deposit_id, oc, nnmodel.block_size, max_epochs=0)
+    nn.model = nnmodel
+    nn.load_state_dict(torch.load(io.BytesIO(nnmodel.dump)))
+    _predict(nn)
