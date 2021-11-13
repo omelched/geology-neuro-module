@@ -8,7 +8,8 @@ from django.conf import settings
 import jwt
 
 from ..rpc import api
-from ..src import check_typing, requires_jwt, InvalidCredentials, generate_DNE, TaskDoesNotExist, predict
+from ..src import check_typing, requires_jwt, InvalidCredentials, generate_DNE, TaskDoesNotExist
+from ..src.neuralmodule import predict
 from ..models import Deposit
 from ..tasks import train_network
 
