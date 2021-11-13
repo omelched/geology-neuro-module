@@ -196,3 +196,5 @@ CELERY_IMPORTS = (
 
 from .celeryapp import app
 CELERY_APP = app
+
+JSONRPC_MAP_VIEW_ENABLED = True
