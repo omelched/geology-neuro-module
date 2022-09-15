@@ -22,6 +22,8 @@ class CrossValidation(models.Model):
         verbose_name=_('name'),
     )
 
+    objects = models.Manager()
+
     def __str__(self):
         return self.name or self.id
 

@@ -9,7 +9,7 @@ import jwt
 
 from ..rpc import api
 from ..src import check_typing, requires_jwt, InvalidCredentials, generate_DNE, TaskDoesNotExist
-from ..src.neuralmodule import predict
+from ..src.neuralmodule import predict as _predict
 from ..models import Deposit
 from ..tasks import train_network
 
@@ -68,7 +68,7 @@ def train_neural_network(request, deposit_id: UUID, max_epochs: int, block_size:
 @requires_jwt
 @check_typing
 def predict(request, neural_model__id: UUID) -> Any:
-    predict(neural_model__id)
+    _predict(neural_model__id)
 
     return {'ok': True}
 

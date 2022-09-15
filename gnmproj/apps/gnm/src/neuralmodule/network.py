@@ -13,7 +13,8 @@ class NeuralNetwork(nn.Module):
                  output_count: int,
                  block_size: float,
                  max_epochs: int,
-                 cross_validation_id: uuid.UUID = None):
+                 cross_validation_id: uuid.UUID = None,
+                 excluded_wells: list[uuid.UUID] = None):
         super(NeuralNetwork, self).__init__()
 
         try:
@@ -35,6 +36,7 @@ class NeuralNetwork(nn.Module):
             cross_validation_id=cross_validation_id,
             dump=None,
         )
+        self.excluded_wells = excluded_wells
 
         self.linear_stack = nn.Sequential(
             nn.Linear(3, 64),
@@ -59,3 +61,6 @@ class NeuralNetwork(nn.Module):
         buff.close()
 
         self.model.save()
+
+        if self.excluded_wells:
+            self.model.excluded_wells.set(self.excluded_wells)

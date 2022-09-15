@@ -100,8 +100,8 @@ class FastDataLoader(object):  # TODO: refactor after init from database
                 DepositBorders.PointTypeEnum.MIN,
                 DepositBorders.PointTypeEnum.MAX
             ]), ValueError(f'no min-max borders in {_cn}')
-            assert borders[_cn][DepositBorders.PointTypeEnum.MIN] < borders[_cn][DepositBorders.PointTypeEnum.MAX],\
-                ValueError(f'`{_cn}.min` >= `{_cn}.max')
+            assert borders[_cn][DepositBorders.PointTypeEnum.MIN] <= borders[_cn][DepositBorders.PointTypeEnum.MAX],\
+                ValueError(f'`{_cn}.min` > `{_cn}.max')
         # TODO: change other type-asserts in project from `type(obj) == cls` to `isinstance(obj, cls)`
 
         pd.options.mode.chained_assignment = None

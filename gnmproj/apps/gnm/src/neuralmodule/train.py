@@ -3,7 +3,7 @@ from pycm import ConfusionMatrix
 from torch import nn, optim
 
 from .dataset import FastDataLoader
-from ...models import Rock, PredictedBlock, NeuralModelMetricValues, PredictedBlockOutputs
+from gnmproj.apps.gnm.models import Rock, PredictedBlock, NeuralModelMetricValues, PredictedBlockOutputs
 from ...models import Metric as MetricModel
 from .network import NeuralNetwork
 from .metrics import MetricValue
@@ -17,6 +17,7 @@ class TrainingSession(object):
                  batch_size: int = 64,
                  epochs: int = 5,
                  update_state_callback: callable = None,
+                 custom_predict_dataloader: FastDataLoader = None,
                  ):
         if not dataloader or not model:
             raise ValueError  # TODO: elaborate
@@ -31,6 +32,7 @@ class TrainingSession(object):
 
         self.loss_fn = nn.CrossEntropyLoss()
         self.optimizer = optim.Adam(self.model.parameters(), lr=learning_rate)
+        self.custom_predict_dataloader = custom_predict_dataloader
 
     def train_loop(self):
         for i, batch in enumerate(self.dataloader):
@@ -79,13 +81,17 @@ class TrainingSession(object):
         self.model.save()
         print('Training finished, predicting', end='\n')
         m = nn.Softmax(dim=1)  # TODO: refactor as method
-        pred = m(self.model(self.dataloader.data[0]))
+        if self.custom_predict_dataloader:
+            dataloader = self.custom_predict_dataloader
+        else:
+            dataloader = self.dataloader
+        pred = m(self.model(dataloader.data[0]))
         pred_argmax = pred.argmax(dim=1)  # TODO: refactor as neural network method
         rocks = Rock.objects.filter(deposit=self.model.model.deposit)
         index_id_rocks_dict = {rock.index: rock.id for rock in rocks}
 
-        coords = pd.DataFrame(self.dataloader.data[0].numpy())
-        coords = self.dataloader.denormalize(coords)
+        coords = pd.DataFrame(dataloader.data[0].numpy())
+        coords = dataloader.denormalize(coords)
 
         predicted_blocks = []
         predicted_blocks_outputs = []
